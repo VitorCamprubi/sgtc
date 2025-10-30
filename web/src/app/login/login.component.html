@@ -1,0 +1,17 @@
+<h2>Login</h2>
+
+<form (ngSubmit)="submit()" #f="ngForm" style="max-width:360px">
+  <div style="margin-bottom:8px">
+    <label for="email">E-mail</label><br />
+    <input id="email" name="email" [(ngModel)]="email" type="email" required />
+  </div>
+
+  <div style="margin-bottom:8px">
+    <label for="password">Senha</label><br />
+    <input id="password" name="password" [(ngModel)]="password" type="password" required />
+  </div>
+
+  <button type="submit">Entrar</button>
+
+  <p *ngIf="error" style="color:crimson;margin-top:8px">{{ error }}</p>
+</form>

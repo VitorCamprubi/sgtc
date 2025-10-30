@@ -1,0 +1,11 @@
+<nav style="padding:8px;border-bottom:1px solid #ccc;display:flex;gap:12px;align-items:center">
+  <a routerLink="/login">Login</a>
+  <a routerLink="/grupos">Grupos</a>
+
+  <span style="margin-left:auto">
+    Logado como: {{ userEmail ?? '-' }}
+    <button (click)="logout()" style="margin-left:8px">Sair</button>
+  </span>
+</nav>
+
+<router-outlet />

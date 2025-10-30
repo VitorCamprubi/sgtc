@@ -1,0 +1,35 @@
+<h2>Grupo {{ grupoId }}</h2>
+
+<div style="margin:12px 0">
+  <input #titulo type="text" placeholder="Título do documento">
+  <input #file type="file">
+  <button (click)="onUpload(file, titulo)">Enviar</button>
+</div>
+
+@if (error()) {
+  <p style="color:crimson">{{ error() }}</p>
+}
+
+@if (lista() === null) {
+  <p>Carregando...</p>
+} @else {
+  <table border="1" cellspacing="0" cellpadding="6">
+    <thead>
+      <tr>
+        <th>ID</th><th>Título</th><th>Versão</th><th>Enviado por</th><th>Criado</th><th>Tamanho</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (d of lista(); track d.id) {
+        <tr>
+          <td>{{ d.id }}</td>
+          <td>{{ d.titulo }}</td>
+          <td>{{ d.versao }}</td>
+          <td>{{ d.enviadoPor }}</td>
+          <td>{{ d.createdAt }}</td>
+          <td>{{ d.tamanho }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

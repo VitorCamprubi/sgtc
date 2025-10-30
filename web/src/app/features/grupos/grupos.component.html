@@ -1,0 +1,50 @@
+<nav style="margin-bottom:12px">
+  <a [routerLink]="['/login']">Login</a> |
+  <a [routerLink]="['/grupos']">Grupos</a>
+  <span style="float:right">
+    Logado como: {{ userEmail || '-' }} |
+    <a href="#" (click)="logout($event)">Sair</a>
+  </span>
+</nav>
+
+<h2>Grupos</h2>
+
+@if (error()) {
+  <p style="color:crimson">Erro: {{ error() }}</p>
+}
+
+<div style="margin-bottom:8px">
+  <button (click)="carregarTodos()">Todos</button>
+  <button (click)="carregarMeus()">Meus</button>
+</div>
+
+@if (grupos() === null) {
+  <p>Carregando...</p>
+} @else {
+  @if (grupos()?.length === 0) {
+    <p>Nenhum grupo encontrado.</p>
+  } @else {
+    <table border="1" cellspacing="0" cellpadding="6">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Título</th>
+          <th>Orientador</th>
+          <th>Coorientador</th>
+          <th>Membros</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (g of grupos()!; track g.id) {
+          <tr>
+            <td>{{ g.id }}</td>
+            <td><a [routerLink]="['/grupos', g.id]">{{ g.titulo }}</a></td>
+            <td>{{ g.orientadorNome || '-' }}</td>
+            <td>{{ g.coorientadorNome || '-' }}</td>
+            <td style="text-align:center">{{ g.totalMembros }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}
