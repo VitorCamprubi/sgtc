@@ -24,4 +24,15 @@ export class DocumentosService {
     fd.append('file', file);
     return this.http.post<DocumentoVersao>(`/api/grupos/${grupoId}/documentos`, fd);
   }
+
+  download(docId: number) {
+    return this.http.get(`/api/documentos/${docId}/download`, {
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+
+  delete(docId: number) {
+    return this.http.delete<void>(`/api/documentos/${docId}`);
+  }
 }

@@ -2,6 +2,7 @@ package com.vitorcamprubi.sgtc.service;
 
 import com.vitorcamprubi.sgtc.domain.*;
 import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
+import com.vitorcamprubi.sgtc.repo.DocumentoComentarioRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.*;
 import org.springframework.http.*;
@@ -19,10 +20,11 @@ public class DocumentoService {
     private String uploadDir;
 
     private final DocumentoVersaoRepository docs;
+    private final DocumentoComentarioRepository comentarios;
     private final PermissaoService perms;
 
-    public DocumentoService(DocumentoVersaoRepository docs, PermissaoService perms) {
-        this.docs = docs; this.perms = perms;
+    public DocumentoService(DocumentoVersaoRepository docs, DocumentoComentarioRepository comentarios, PermissaoService perms) {
+        this.docs = docs; this.comentarios = comentarios; this.perms = perms;
     }
 
     @Transactional
@@ -62,5 +64,23 @@ public class DocumentoService {
                 .contentLength(Files.size(path))
                 .contentType(MediaType.parseMediaType(ct))
                 .body(res);
+    }
+
+    @Transactional
+    public void delete(Long docId, User atual) throws IOException {
+        DocumentoVersao d = docs.findById(docId).orElseThrow();
+        Grupo g = d.getGrupo();
+        boolean pode = atual.getRole() == Role.ADMIN
+                || perms.isOrientadorOuCoorientador(g, atual)
+                || (d.getEnviadoPor() != null && d.getEnviadoPor().getId().equals(atual.getId()));
+        if (!pode) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN, "Sem permissão");
+        }
+        // remove comentários vinculados
+        comentarios.deleteByDocumentoId(docId);
+        // apaga arquivo físico
+        try { Files.deleteIfExists(Paths.get(d.getFilePath())); } catch (Exception ignored) {}
+        // remove registro
+        docs.delete(d);
     }
 }

@@ -1,35 +1,116 @@
 <h2>Grupo {{ grupoId }}</h2>
 
 <div style="margin:12px 0">
-  <input #titulo type="text" placeholder="Título do documento">
-  <input #file type="file">
-  <button (click)="onUpload(file, titulo)">Enviar</button>
+  <input type="text" placeholder="Título do documento" [(ngModel)]="tituloDocumento">
+  <input #fileInput type="file" (change)="onFileSelected($event)">
+  <button (click)="uploadFromState(fileInput)" [disabled]="!tituloDocumento.trim() || !arquivoSelecionado">Enviar</button>
+  @if (error()) {
+    <span style="color:crimson; margin-left:8px">{{ error() }}</span>
+  }
+  </div>
+
+<div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap">
+  <div style="flex:2 1 520px">
+    @if (lista() === null) {
+      <p>Carregando...</p>
+    } @else {
+      <table border="1" cellspacing="0" cellpadding="6" style="width:100%">
+        <thead>
+          <tr>
+            <th>ID</th><th>Título</th><th>Versão</th><th>Enviado por</th><th>Criado</th><th>Tamanho</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of lista(); track d.id) {
+            <tr>
+              <td>{{ d.id }}</td>
+              <td>{{ d.titulo }}</td>
+              <td>{{ d.versao }}</td>
+              <td>{{ d.enviadoPor }}</td>
+              <td>{{ d.createdAt }}</td>
+              <td>{{ d.tamanho }}</td>
+              <td>
+                <button (click)="onDownload(d)" [disabled]="baixando() === d.id">Baixar</button>
+                <button (click)="selecionarDoc(d)">Comentários</button>
+                @if (canDelete(d)) {
+                  <button (click)="excluir(d)" style="color:crimson">Excluir</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  <div style="flex:1 1 320px; border:1px solid #ccc; padding:8px">
+    <h3>Comentários</h3>
+    @if (!docSelecionado()) {
+      <p>Selecione um documento para ver/comentar.</p>
+    } @else {
+      <p><strong>Documento:</strong> {{ docSelecionado()?.titulo }} v{{ docSelecionado()?.versao }}</p>
+      <div style="display:flex; gap:6px; margin-bottom:8px">
+        <input [(ngModel)]="novoComentario" placeholder="Novo comentário" style="flex:1" />
+        <button (click)="enviarComentario()">Enviar</button>
+      </div>
+      @if (comentariosDoc() === null) {
+        <p>Carregando comentários...</p>
+      } @else if (comentariosDoc()?.length === 0) {
+        <p>Nenhum comentário.</p>
+      } @else {
+        <ul style="list-style:none; padding:0; margin:0; max-height:240px; overflow:auto">
+          @for (c of comentariosDoc(); track c.id) {
+            <li style="border-bottom:1px solid #eee; padding:6px 0">
+              <div><strong>{{ c.autor }}</strong> — <small>{{ c.createdAt }}</small></div>
+              <div>{{ c.texto }}</div>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
 </div>
 
-@if (error()) {
-  <p style="color:crimson">{{ error() }}</p>
-}
+<div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-top:16px">
+  <div style="flex:1 1 420px; border:1px solid #ccc; padding:8px">
+    <h3>Reuniões</h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px">
+      <input type="datetime-local" [(ngModel)]="novaDataHora" />
+      <input placeholder="Pauta" [(ngModel)]="novaPauta" />
+      <input placeholder="Observações" [(ngModel)]="novasObs" />
+      <button (click)="agendarReuniao()">Agendar</button>
+    </div>
+    @if (listaReunioes() === null) {
+      <p>Carregando...</p>
+    } @else if (listaReunioes()?.length === 0) {
+      <p>Nenhuma reunião.</p>
+    } @else {
+      <table border="1" cellspacing="0" cellpadding="6" style="width:100%">
+        <thead>
+          <tr><th>Data/Hora</th><th>Pauta</th><th>Observações</th><th>Criado por</th></tr>
+        </thead>
+        <tbody>
+          @for (r of listaReunioes(); track r.id) {
+            <tr>
+              <td>{{ r.dataHora }}</td><td>{{ r.pauta }}</td><td>{{ r.observacoes }}</td><td>{{ r.criadoPor }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
 
-@if (lista() === null) {
-  <p>Carregando...</p>
-} @else {
-  <table border="1" cellspacing="0" cellpadding="6">
-    <thead>
-      <tr>
-        <th>ID</th><th>Título</th><th>Versão</th><th>Enviado por</th><th>Criado</th><th>Tamanho</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (d of lista(); track d.id) {
-        <tr>
-          <td>{{ d.id }}</td>
-          <td>{{ d.titulo }}</td>
-          <td>{{ d.versao }}</td>
-          <td>{{ d.enviadoPor }}</td>
-          <td>{{ d.createdAt }}</td>
-          <td>{{ d.tamanho }}</td>
-        </tr>
-      }
-    </tbody>
-  </table>
-}
+  @if (isAdmin()) {
+    <div style="flex:1 1 320px; border:1px solid #ccc; padding:8px">
+      <h3>Admin - Adicionar membros</h3>
+      <select multiple size="8" style="width:100%" (change)="onMembrosChange($event)">
+        @for (a of alunos(); track a.id) {
+          <option [value]="a.id">{{ a.nome }} ({{ a.email }})</option>
+        }
+      </select>
+      <div style="margin-top:8px; display:flex; gap:8px">
+        <button (click)="adicionarMembros()">Adicionar</button>
+      </div>
+    </div>
+  }
+</div>

@@ -13,10 +13,27 @@
   <p style="color:crimson">Erro: {{ error() }}</p>
 }
 
-<div style="margin-bottom:8px">
-  <button (click)="carregarTodos()">Todos</button>
-  <button (click)="carregarMeus()">Meus</button>
-</div>
+@if (isAdmin()) {
+  <fieldset style="border:1px solid #ccc; padding:12px; margin:12px 0">
+    <legend>Admin - Criar novo grupo</legend>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <input placeholder="Título" [(ngModel)]="novoTitulo" />
+      <select [(ngModel)]="novoOrientadorId">
+        <option [ngValue]="null">Selecione orientador</option>
+        @for (u of orientadores(); track u.id) {
+          <option [ngValue]="u.id">{{ u.nome }}</option>
+        }
+      </select>
+      <select [(ngModel)]="novoCoorientadorId">
+        <option [ngValue]="null">Coorientador (opcional)</option>
+        @for (u of orientadores(); track u.id) {
+          <option [ngValue]="u.id">{{ u.nome }}</option>
+        }
+      </select>
+      <button (click)="criarGrupo()">Criar</button>
+    </div>
+  </fieldset>
+}
 
 @if (grupos() === null) {
   <p>Carregando...</p>

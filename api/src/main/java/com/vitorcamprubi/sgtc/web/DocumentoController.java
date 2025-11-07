@@ -35,4 +35,9 @@ public class DocumentoController {
     public ResponseEntity<Resource> download(@PathVariable Long docId) throws IOException {
         return service.download(docId, auth.getCurrentUser());
     }
+
+    @DeleteMapping("/documentos/{docId}")
+    public void delete(@PathVariable Long docId) throws IOException {
+        service.delete(docId, auth.getCurrentUser());
+    }
 }
