@@ -1,1 +1,105 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --sgtc-page-background: #f5f7fb;
+  --sgtc-surface: #ffffff;
+  --sgtc-text: #1f2a37;
+  --sgtc-text-strong: #0f172a;
+  --sgtc-muted: #4a5568;
+  --sgtc-border: #d6dde8;
+  --sgtc-primary: #0a84ff;
+  --sgtc-primary-hover: #006dd6;
+  --sgtc-accent: #c0132f;
+  --sgtc-focus: rgba(10, 132, 255, 0.35);
+  --sgtc-error: #c81e1e;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Segoe UI', 'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--sgtc-page-background);
+  color: var(--sgtc-text);
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--sgtc-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  background: var(--sgtc-surface);
+  border: 1px solid var(--sgtc-border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: var(--sgtc-text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--sgtc-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sgtc-focus);
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--sgtc-primary);
+  cursor: pointer;
+  box-shadow: 0 18px 35px rgba(10, 132, 255, 0.25);
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background: var(--sgtc-primary-hover);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 20px rgba(10, 132, 255, 0.3);
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}

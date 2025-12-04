@@ -1,17 +1,23 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { LoginComponent } from './login/login.component';
+import { GruposComponent } from './features/grupos/grupos.component';
+import { GrupoDetalheComponent } from './features/grupos/grupo-detalhe.component';
 
 export const routes: Routes = [
-  { path: 'login', loadComponent: () => import('./login/login.component').then(m => m.LoginComponent) },
+  {
+    path: 'login',
+    component: LoginComponent,
+  },
   {
     path: 'grupos',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/grupos/grupos.component').then(m => m.GruposComponent),
+    component: GruposComponent,
   },
   {
     path: 'grupos/:id',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/grupos/grupo-detalhe.component').then(m => m.GrupoDetalheComponent),
+    component: GrupoDetalheComponent,
   },
   { path: '', pathMatch: 'full', redirectTo: 'grupos' },
   { path: '**', redirectTo: 'grupos' },

@@ -1,0 +1,102 @@
+@use 'sass:color';
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--sgtc-page-background);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.25rem 2.5rem;
+  border-bottom: 1px solid var(--sgtc-border);
+  background: var(--sgtc-surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand-block {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--sgtc-text-strong);
+}
+
+.brand-subtitle {
+  font-size: 0.85rem;
+  color: var(--sgtc-muted);
+}
+
+.primary-nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.primary-nav a {
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--sgtc-muted);
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.primary-nav a:hover {
+  color: var(--sgtc-text-strong);
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.primary-nav a.active {
+  color: var(--sgtc-text-strong);
+  background: var(--sgtc-focus);
+}
+
+.session-info {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--sgtc-muted);
+}
+
+.session-info strong {
+  color: var(--sgtc-text-strong);
+}
+
+.session-info button {
+  width: auto;
+  padding: 0.55rem 1.1rem;
+  box-shadow: none;
+}
+
+.app-main {
+  flex: 1;
+  padding: 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .session-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

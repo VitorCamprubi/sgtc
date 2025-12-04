@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { GrupoService, GrupoCreateRequest } from '../../services/grupo.service';
 import { UsuariosService, Usuario } from '../../services/usuarios.service';
-import { FormsModule } from '@angular/forms';
 import { GrupoResumoDTO } from '../../model/grupo-resumo.dto';
 
 @Component({
@@ -14,7 +14,6 @@ import { GrupoResumoDTO } from '../../model/grupo-resumo.dto';
   imports: [CommonModule, RouterLink, FormsModule],
 })
 export class GruposComponent implements OnInit {
-  private router = inject(Router);
   private gruposApi = inject(GrupoService);
   private usuariosApi = inject(UsuariosService);
 
@@ -26,7 +25,7 @@ export class GruposComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarMeus();
-    // carrega info de usuários para Ações de Admin
+    // carrega info de usuarios para acoes de Admin
     this.usuariosApi.listarPublic().subscribe({
       next: (us) => {
         this.usuarios.set(us);
@@ -48,41 +47,24 @@ export class GruposComponent implements OnInit {
     });
   }
 
-  logout(ev?: Event) {
-    ev?.preventDefault();
-    sessionStorage.removeItem('sgtc_auth');
-    localStorage.removeItem('sgtc_auth');
-    sessionStorage.removeItem('sgtc_user');
-    localStorage.removeItem('sgtc_user');
-    this.router.navigateByUrl('/login');
-  }
-
-  get userEmail(): string | null {
-    const raw =
-      sessionStorage.getItem('sgtc_user') || localStorage.getItem('sgtc_user');
-    try {
-      return raw ? JSON.parse(raw).email ?? null : null;
-    } catch {
-      return null;
-    }
-  }
-
   // Admin: criar grupo
   novoTitulo = '';
   novoOrientadorId: number | null = null;
   novoCoorientadorId: number | null = null;
 
-  criarGrupo() {
+  criarGrupo(): void {
     this.error.set(null);
     const payload: GrupoCreateRequest = {
       titulo: this.novoTitulo.trim(),
       orientadorId: this.novoOrientadorId!,
       coorientadorId: this.novoCoorientadorId || null,
     };
+
     if (!payload.titulo || !payload.orientadorId) {
-      this.error.set('Preencha título e orientador.');
+      this.error.set('Preencha titulo e orientador.');
       return;
     }
+
     this.gruposApi.criar(payload).subscribe({
       next: () => {
         this.novoTitulo = '';

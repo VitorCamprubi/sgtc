@@ -1,11 +1,24 @@
-<nav style="padding:8px;border-bottom:1px solid #ccc;display:flex;gap:12px;align-items:center">
-  <a routerLink="/login">Login</a>
-  <a routerLink="/grupos">Grupos</a>
+<div class="app-shell">
+  <header class="app-header">
+    <div class="brand-block">
+      <span class="brand-title">SGTC</span>
+      <span class="brand-subtitle">Fatec Tatui</span>
+    </div>
 
-  <span style="margin-left:auto">
-    Logado como: {{ userEmail ?? '-' }}
-    <button (click)="logout()" style="margin-left:8px">Sair</button>
-  </span>
-</nav>
+    <nav class="primary-nav">
+      <a routerLink="/login" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        Login
+      </a>
+      <a routerLink="/grupos" routerLinkActive="active">Grupos</a>
+    </nav>
 
-<router-outlet />
+    <div class="session-info">
+      <span>Logado como <strong>{{ userEmail ?? '-' }}</strong></span>
+      <button type="button" (click)="logout()">Sair</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <router-outlet />
+  </main>
+</div>

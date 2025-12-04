@@ -1,67 +1,86 @@
-<nav style="margin-bottom:12px">
-  <a [routerLink]="['/login']">Login</a> |
-  <a [routerLink]="['/grupos']">Grupos</a>
-  <span style="float:right">
-    Logado como: {{ userEmail || '-' }} |
-    <a href="#" (click)="logout($event)">Sair</a>
-  </span>
-</nav>
-
-<h2>Grupos</h2>
-
-@if (error()) {
-  <p style="color:crimson">Erro: {{ error() }}</p>
-}
-
-@if (isAdmin()) {
-  <fieldset style="border:1px solid #ccc; padding:12px; margin:12px 0">
-    <legend>Admin - Criar novo grupo</legend>
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-      <input placeholder="Título" [(ngModel)]="novoTitulo" />
-      <select [(ngModel)]="novoOrientadorId">
-        <option [ngValue]="null">Selecione orientador</option>
-        @for (u of orientadores(); track u.id) {
-          <option [ngValue]="u.id">{{ u.nome }}</option>
-        }
-      </select>
-      <select [(ngModel)]="novoCoorientadorId">
-        <option [ngValue]="null">Coorientador (opcional)</option>
-        @for (u of orientadores(); track u.id) {
-          <option [ngValue]="u.id">{{ u.nome }}</option>
-        }
-      </select>
-      <button (click)="criarGrupo()">Criar</button>
+<section class="groups-page">
+  <header class="section-header">
+    <div>
+      <p class="breadcrumbs">
+        <a routerLink="/login">Login</a>
+        <span aria-hidden="true">/</span>
+        <span>Grupos</span>
+      </p>
+      <h2>Grupos</h2>
+      <p class="section-subtitle">
+        Acompanhe os grupos cadastrados e gerencie novas turmas quando necessario.
+      </p>
     </div>
-  </fieldset>
-}
+    <button type="button" class="ghost-button" (click)="carregarMeus()">Atualizar lista</button>
+  </header>
 
-@if (grupos() === null) {
-  <p>Carregando...</p>
-} @else {
-  @if (grupos()?.length === 0) {
-    <p>Nenhum grupo encontrado.</p>
-  } @else {
-    <table border="1" cellspacing="0" cellpadding="6">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Título</th>
-          <th>Orientador</th>
-          <th>Coorientador</th>
-          <th>Membros</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (g of grupos()!; track g.id) {
-          <tr>
-            <td>{{ g.id }}</td>
-            <td><a [routerLink]="['/grupos', g.id]">{{ g.titulo }}</a></td>
-            <td>{{ g.orientadorNome || '-' }}</td>
-            <td>{{ g.coorientadorNome || '-' }}</td>
-            <td style="text-align:center">{{ g.totalMembros }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+  @if (error()) {
+    <p class="error-banner">Erro: {{ error() }}</p>
   }
-}
+
+  @if (isAdmin()) {
+    <section class="card admin-card">
+      <div class="card-header">
+        <h3>Admin - Criar novo grupo</h3>
+      </div>
+      <div class="form-grid">
+        <input placeholder="Titulo" [(ngModel)]="novoTitulo" />
+        <select [(ngModel)]="novoOrientadorId">
+          <option [ngValue]="null">Selecione orientador</option>
+          @for (u of orientadores(); track u.id) {
+            <option [ngValue]="u.id">{{ u.nome }}</option>
+          }
+        </select>
+        <select [(ngModel)]="novoCoorientadorId">
+          <option [ngValue]="null">Coorientador (opcional)</option>
+          @for (u of orientadores(); track u.id) {
+            <option [ngValue]="u.id">{{ u.nome }}</option>
+          }
+        </select>
+        <button type="button" (click)="criarGrupo()">Criar</button>
+      </div>
+    </section>
+  }
+
+  <section class="card">
+    <div class="card-header compact">
+      <h3>Meus grupos</h3>
+      @if (grupos()) {
+        <span class="pill-count">{{ grupos()?.length ?? 0 }}</span>
+      }
+    </div>
+
+    @if (grupos() === null) {
+      <p class="state-info">Carregando...</p>
+    } @else {
+      @if (grupos()?.length === 0) {
+        <p class="state-info">Nenhum grupo encontrado.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="groups-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Titulo</th>
+                <th>Orientador</th>
+                <th>Coorientador</th>
+                <th>Membros</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (g of grupos()!; track g.id) {
+                <tr>
+                  <td>{{ g.id }}</td>
+                  <td><a [routerLink]="['/grupos', g.id]">{{ g.titulo }}</a></td>
+                  <td>{{ g.orientadorNome || '-' }}</td>
+                  <td>{{ g.coorientadorNome || '-' }}</td>
+                  <td class="members-count">{{ g.totalMembros }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </section>
+</section>
