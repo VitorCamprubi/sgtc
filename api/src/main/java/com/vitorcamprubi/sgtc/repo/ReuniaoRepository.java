@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface ReuniaoRepository extends JpaRepository<Reuniao, Long> {
     List<Reuniao> findByGrupoIdOrderByDataHoraDesc(Long grupoId);
+    void deleteByGrupoId(Long grupoId);
+    long countByCriadoPorId(Long criadoPorId);
 }

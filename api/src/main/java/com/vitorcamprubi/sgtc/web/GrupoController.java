@@ -36,4 +36,10 @@ public class GrupoController {
     public void adicionarMembros(@PathVariable Long id, @RequestBody @Valid AddMembrosRequest req) {
         service.adicionarMembros(id, req.getAlunosIds());
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void excluir(@PathVariable Long id) {
+        service.excluir(id, auth.getCurrentUser());
+    }
 }

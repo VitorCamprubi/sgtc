@@ -10,6 +10,14 @@ export type Usuario = {
   ra?: string | null;
 };
 
+export type UsuarioAdminPayload = {
+  nome: string;
+  email: string;
+  senha?: string;
+  role: 'ALUNO' | 'ORIENTADOR' | 'COORIENTADOR';
+  ra?: string | null;
+};
+
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
   private http = inject(HttpClient);
@@ -30,5 +38,22 @@ export class UsuariosService {
     return this.listarPublic().pipe(
       map((list) => list.find((u) => u.email === email) ?? null)
     );
+  }
+
+  listarAdmin(role?: 'ALUNO' | 'ORIENTADOR' | 'COORIENTADOR') {
+    const params = role ? { role } : undefined;
+    return this.http.get<Usuario[]>('/api/admin/usuarios', { params });
+  }
+
+  criarAdmin(payload: UsuarioAdminPayload) {
+    return this.http.post<Usuario>('/api/admin/usuarios', payload);
+  }
+
+  atualizarAdmin(id: number, payload: UsuarioAdminPayload) {
+    return this.http.put<Usuario>(`/api/admin/usuarios/${id}`, payload);
+  }
+
+  excluirAdmin(id: number) {
+    return this.http.delete<void>(`/api/admin/usuarios/${id}`);
   }
 }

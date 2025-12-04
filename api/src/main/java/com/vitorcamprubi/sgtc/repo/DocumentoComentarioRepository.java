@@ -7,4 +7,5 @@ import java.util.List;
 public interface DocumentoComentarioRepository extends JpaRepository<DocumentoComentario, Long> {
     List<DocumentoComentario> findByDocumentoIdOrderByCreatedAtAsc(Long documentoId);
     void deleteByDocumentoId(Long documentoId);
+    long countByAutorId(Long autorId);
 }

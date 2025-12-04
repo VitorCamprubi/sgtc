@@ -1,0 +1,109 @@
+<section class="admin-page">
+  <header class="section-header">
+    <div>
+      <p class="breadcrumbs">
+        <span>Admin</span>
+        <span aria-hidden="true">/</span>
+        <span>Usuários</span>
+      </p>
+      <h2>Usuários</h2>
+      <p class="section-subtitle">
+        Cadastre, edite ou remova alunos, orientadores e coorientadores.
+      </p>
+    </div>
+    <button class="ghost-button" type="button" (click)="carregarUsuariosAdmin(adminRoleFiltro())">
+      Atualizar
+    </button>
+  </header>
+
+  <div class="admin-users-grid">
+    <div class="admin-users-list card">
+      <div class="list-header">
+        <div class="segmented">
+          <button type="button"
+                  [class.active]="adminRoleFiltro() === 'ALUNO'"
+                  (click)="carregarUsuariosAdmin('ALUNO')">
+            Alunos
+          </button>
+          <button type="button"
+                  [class.active]="adminRoleFiltro() === 'ORIENTADOR'"
+                  (click)="carregarUsuariosAdmin('ORIENTADOR')">
+            Orientadores
+          </button>
+          <button type="button"
+                  [class.active]="adminRoleFiltro() === 'COORIENTADOR'"
+                  (click)="carregarUsuariosAdmin('COORIENTADOR')">
+            Coorientadores
+          </button>
+        </div>
+      </div>
+
+      @if (adminError()) {
+        <p class="error-banner">{{ adminError() }}</p>
+      }
+
+      @if (adminLoading()) {
+        <p class="state-info">Carregando...</p>
+      } @else if (usuariosAdmin() === null) {
+        <p class="state-info">Selecione um filtro para carregar.</p>
+      } @else if (usuariosAdmin()?.length === 0) {
+        <p class="state-info">Nenhum usuário encontrado.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Perfil</th>
+                @if (adminRoleFiltro() === 'ALUNO') { <th>RA</th> }
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of usuariosAdmin()!; track u.id) {
+                <tr>
+                  <td>{{ u.nome }}</td>
+                  <td>{{ u.email }}</td>
+                  <td>{{ u.role }}</td>
+                  @if (adminRoleFiltro() === 'ALUNO') {
+                    <td>{{ u.ra || '-' }}</td>
+                  }
+                  <td class="actions">
+                    <button type="button" class="ghost-button" (click)="editarUsuario(u)">Editar</button>
+                    <button type="button" class="ghost-button danger" (click)="excluirUsuario(u)">Excluir</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="admin-users-form card">
+      <h4>{{ editandoId() ? 'Editar usuário' : 'Novo usuário' }}</h4>
+      <div class="form-grid">
+        <input placeholder="Nome" [(ngModel)]="formNome" />
+        <input placeholder="Email" type="email" [(ngModel)]="formEmail" />
+        <input placeholder="Senha" type="password" [(ngModel)]="formSenha" [required]="!editandoId()" />
+        <select [(ngModel)]="formRole">
+          <option value="ALUNO">Aluno</option>
+          <option value="ORIENTADOR">Orientador</option>
+          <option value="COORIENTADOR">Coorientador</option>
+        </select>
+        @if (formRole === 'ALUNO') {
+          <input placeholder="RA (opcional)" [(ngModel)]="formRa" />
+        }
+      </div>
+      <div class="form-actions">
+        <button type="button" (click)="salvarUsuario()">
+          {{ editandoId() ? 'Salvar alterações' : 'Cadastrar' }}
+        </button>
+        @if (editandoId()) {
+          <button type="button" class="ghost-button" (click)="resetFormUsuario()">Cancelar</button>
+        }
+      </div>
+    </div>
+  </div>
+</section>

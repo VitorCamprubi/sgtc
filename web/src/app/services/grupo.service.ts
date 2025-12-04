@@ -29,4 +29,8 @@ export class GrupoService {
     const body: AddMembrosRequest = { alunosIds };
     return this.http.post<void>(`/api/grupos/${id}/membros`, body);
   }
+
+  deletar(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/grupos/${id}`);
+  }
 }

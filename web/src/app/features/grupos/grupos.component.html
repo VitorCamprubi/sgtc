@@ -65,6 +65,7 @@
                 <th>Orientador</th>
                 <th>Coorientador</th>
                 <th>Membros</th>
+                @if (isAdmin()) { <th>Acoes</th> }
               </tr>
             </thead>
             <tbody>
@@ -75,6 +76,15 @@
                   <td>{{ g.orientadorNome || '-' }}</td>
                   <td>{{ g.coorientadorNome || '-' }}</td>
                   <td class="members-count">{{ g.totalMembros }}</td>
+                  @if (isAdmin()) {
+                    <td>
+                      <button type="button" class="ghost-button danger"
+                              [disabled]="deletando() === g.id"
+                              (click)="excluirGrupo(g.id, g.titulo)">
+                        {{ deletando() === g.id ? 'Excluindo...' : 'Excluir' }}
+                      </button>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>

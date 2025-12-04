@@ -10,6 +10,7 @@
         Login
       </a>
       <a routerLink="/grupos" routerLinkActive="active">Grupos</a>
+      <a *ngIf="isAdminLinkVisible" routerLink="/admin/usuarios" routerLinkActive="active">Admin</a>
     </nav>
 
     <div class="session-info">

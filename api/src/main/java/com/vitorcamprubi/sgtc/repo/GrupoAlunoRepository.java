@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface GrupoAlunoRepository extends JpaRepository<GrupoAluno, Long> {
     boolean existsByGrupoIdAndAlunoId(Long grupoId, Long alunoId);
     long countByGrupoId(Long grupoId);
+    void deleteByGrupoId(Long grupoId);
+    long countByAlunoId(Long alunoId);
 }

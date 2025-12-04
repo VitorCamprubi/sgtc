@@ -11,4 +11,6 @@ public interface GrupoRepository extends JpaRepository<Grupo, Long> {
 
     @Query("select ga.grupo from GrupoAluno ga where ga.aluno.id = :alunoId")
     List<Grupo> findByAlunoId(@Param("alunoId") Long alunoId);
+
+    long countByOrientadorIdOrCoorientadorId(Long orientadorId, Long coorientadorId);
 }

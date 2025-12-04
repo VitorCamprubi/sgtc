@@ -7,4 +7,5 @@ import java.util.List;
 public interface DocumentoVersaoRepository extends JpaRepository<DocumentoVersao, Long> {
     int countByGrupoId(Long grupoId);
     List<DocumentoVersao> findByGrupoIdOrderByVersaoDesc(Long grupoId);
+    long countByEnviadoPorId(Long usuarioId);
 }

@@ -22,6 +22,7 @@ export class GruposComponent implements OnInit {
   isAdmin = signal<boolean>(false);
   usuarios = signal<Usuario[]>([]);
   orientadores = signal<Usuario[]>([]);
+  deletando = signal<number | null>(null);
 
   ngOnInit(): void {
     this.carregarMeus();
@@ -47,6 +48,24 @@ export class GruposComponent implements OnInit {
     });
   }
 
+  excluirGrupo(id: number, titulo: string) {
+    if (!this.isAdmin()) return;
+    if (!confirm(`Excluir o grupo "${titulo}"? Esta ação é definitiva.`)) return;
+    this.error.set(null);
+    this.deletando.set(id);
+    this.gruposApi.deletar(id).subscribe({
+      next: () => {
+        this.deletando.set(null);
+        this.carregarMeus();
+      },
+      error: (e) => {
+        this.deletando.set(null);
+        this.error.set(`${e.status} ${e.statusText}`);
+      },
+    });
+  }
+
+  // --- Admin: usuários (alunos/professores) ---
   // Admin: criar grupo
   novoTitulo = '';
   novoOrientadorId: number | null = null;

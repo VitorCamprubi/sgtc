@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -16,9 +17,19 @@ public class GrupoService {
     private final GrupoRepository grupos;
     private final UserRepository users;
     private final GrupoAlunoRepository grupoAlunos;
+    private final DocumentoVersaoRepository documentos;
+    private final ReuniaoRepository reunioes;
+    private final DocumentoService documentoService;
 
-    public GrupoService(GrupoRepository grupos, UserRepository users, GrupoAlunoRepository grupoAlunos) {
-        this.grupos = grupos; this.users = users; this.grupoAlunos = grupoAlunos;
+    public GrupoService(GrupoRepository grupos, UserRepository users, GrupoAlunoRepository grupoAlunos,
+                        DocumentoVersaoRepository documentos, ReuniaoRepository reunioes,
+                        DocumentoService documentoService) {
+        this.grupos = grupos;
+        this.users = users;
+        this.grupoAlunos = grupoAlunos;
+        this.documentos = documentos;
+        this.reunioes = reunioes;
+        this.documentoService = documentoService;
     }
 
     @Transactional
@@ -60,6 +71,28 @@ public class GrupoService {
             lista = grupos.findByAlunoId(atual.getId());
         }
         return lista.stream().map(this::toResumo).toList();
+    }
+
+    @Transactional
+    public void excluir(Long grupoId, User atual) {
+        if (atual.getRole() != Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas ADMIN pode excluir grupo");
+        }
+        Grupo g = grupos.findById(grupoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grupo não encontrado"));
+
+        var docs = documentos.findByGrupoIdOrderByVersaoDesc(grupoId);
+        for (var d : docs) {
+            try {
+                documentoService.delete(d.getId(), atual);
+            } catch (IOException e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao remover documentos", e);
+            }
+        }
+
+        reunioes.deleteByGrupoId(grupoId);
+        grupoAlunos.deleteByGrupoId(grupoId);
+        grupos.delete(g);
     }
 
     private User buscaUser(Long id) {

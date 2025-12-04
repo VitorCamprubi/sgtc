@@ -1,14 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { UsuariosService, Usuario } from './services/usuarios.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  private usuariosApi = inject(UsuariosService);
+  userRole: Usuario['role'] | null = null;
+
   private readonly AUTH_KEY = 'sgtc_auth';
   private readonly USER_KEY = 'sgtc_user';
 
@@ -21,6 +26,22 @@ export class AppComponent {
     } catch {
       return null;
     }
+  }
+
+  get isAdmin(): boolean {
+    return this.userRole === 'ADMIN';
+  }
+
+  get isAdminLinkVisible(): boolean {
+    // mostra se já sabemos que é admin ou se o email armazenado é o do admin seed
+    const email = this.userEmail;
+    return this.isAdmin || email === 'admin@sgtc.local';
+  }
+
+  ngOnInit(): void {
+    this.usuariosApi.getUsuarioAtualViaDebug().subscribe((u) => {
+      this.userRole = u?.role ?? null;
+    });
   }
 
   logout() {
