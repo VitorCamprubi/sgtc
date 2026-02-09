@@ -10,5 +10,5 @@ public class PingController {
     public String health() { return "ok"; }
 
     @GetMapping("/api/ping")
-    public String ping() { return "pong"; } // protegido (precisa Basic Auth)
+    public String ping() { return "pong"; } // liberado para health-check com/sem token
 }
