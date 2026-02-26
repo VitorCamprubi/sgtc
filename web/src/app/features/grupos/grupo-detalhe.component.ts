@@ -7,12 +7,15 @@ import { ComentariosService, Comentario } from '../../services/comentarios.servi
 import { ReunioesService, Reuniao } from '../../services/reunioes.service';
 import { UsuariosService, Usuario } from '../../services/usuarios.service';
 import { GrupoService } from '../../services/grupo.service';
+import { faDownload, faComments, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 @Component({
   selector: 'app-grupo-detalhe',
   standalone: true,
   templateUrl: './grupo-detalhe.component.html',
-  imports: [CommonModule, FormsModule],
+  styleUrls: ['./grupo-detalhe.component.scss'],
+  imports: [CommonModule, FormsModule, FontAwesomeModule],
 })
 export class GrupoDetalheComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -21,6 +24,10 @@ export class GrupoDetalheComponent implements OnInit {
   private reunioes = inject(ReunioesService);
   private usuarios = inject(UsuariosService);
   private grupos = inject(GrupoService);
+
+  faDownload = faDownload;
+  faComments = faComments;
+  faTrashCan = faTrashCan;
 
   grupoId = 0;
   lista = signal<DocumentoVersao[] | null>(null);
@@ -161,7 +168,11 @@ export class GrupoDetalheComponent implements OnInit {
     const dataHora = this.novaDataHora;
     const pauta = this.novaPauta.trim();
     const observacoes = this.novasObs.trim();
-    if (!dataHora || !pauta) return;
+
+    if (!dataHora || !pauta) {
+      alert('É necessario adicionar uma hora!');
+      return;
+    }
     this.reunioes
       .agendar(this.grupoId, { dataHora, pauta, observacoes })
       .subscribe({

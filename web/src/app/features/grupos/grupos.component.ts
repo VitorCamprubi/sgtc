@@ -22,6 +22,7 @@ export class GruposComponent implements OnInit {
   isAdmin = signal<boolean>(false);
   usuarios = signal<Usuario[]>([]);
   orientadores = signal<Usuario[]>([]);
+  coorientadores = signal<Usuario[]>([]);
   deletando = signal<number | null>(null);
 
   ngOnInit(): void {
@@ -31,6 +32,7 @@ export class GruposComponent implements OnInit {
       next: (us) => {
         this.usuarios.set(us);
         this.orientadores.set(us.filter((u) => u.role === 'ORIENTADOR'));
+        this.coorientadores.set(us.filter((u) => u.role === 'COORIENTADOR'));
       },
     });
     this.usuariosApi.getUsuarioAtualViaDebug().subscribe((u) => {
