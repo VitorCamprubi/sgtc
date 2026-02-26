@@ -33,7 +33,7 @@
         </select>
         <select [(ngModel)]="novoCoorientadorId">
           <option [ngValue]="null">Coorientador (opcional)</option>
-          @for (u of orientadores(); track u.id) {
+          @for (u of coorientadores(); track u.id) {
             <option [ngValue]="u.id">{{ u.nome }}</option>
           }
         </select>
