@@ -126,6 +126,22 @@ npm start
   - Clique no título da linha na tabela de Grupos
   - Ou acesse diretamente `http://localhost:4200/grupos/<id>`
 
+  ## Subindo o banco com Docker
+
+1. Copie o arquivo de exemplo:
+   cp .env.example .env
+
+2. Ajuste os valores do `.env` se quiser.
+
+3. Suba os containers:
+   docker compose up -d
+
+4. O MySQL ficará disponível na porta definida em `MYSQL_PORT`.
+5. O Adminer ficará disponível em:
+   http://localhost:8081
+
+   No Windows, você pode copiar manualmente `.env.example` para `.env`.
+
 ## Licença
 Uso educacional/demonstração. Adapte conforme sua necessidade.
 
