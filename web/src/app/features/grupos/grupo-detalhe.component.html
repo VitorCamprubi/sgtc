@@ -120,16 +120,38 @@
       }
     </div>
 
+    <div class="grupo-membros-card">
+      <h3>Membros do grupo</h3>
+      @if (membrosGrupo() === null) {
+        <p>Carregando membros...</p>
+      } @else if (membrosGrupo()?.length === 0) {
+        <p>Nenhum membro adicionado.</p>
+      } @else {
+        <ul class="lista-membros">
+          @for (m of membrosGrupo(); track m.id) {
+            <li>
+              <strong>{{ m.nome }}</strong>
+              <span>{{ m.email }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
     @if (isAdmin()) {
-      <div style="flex:1 1 320px; border:1px solid #ccc; padding:8px; margin-top: 20px;">
+      <div class="grupo-admin-membros-card">
         <h3>Admin - Adicionar membros</h3>
         <select multiple size="8" style="width:100%" (change)="onMembrosChange($event)">
-          @for (a of alunos(); track a.id) {
-            <option [value]="a.id">{{ a.nome }} ({{ a.email }})</option>
+          @if (alunosDisponiveis().length === 0) {
+            <option disabled>Todos os alunos ja fazem parte do grupo.</option>
+          } @else {
+            @for (a of alunosDisponiveis(); track a.id) {
+              <option [value]="a.id">{{ a.nome }} ({{ a.email }})</option>
+            }
           }
         </select>
-        <div style="margin-top:8px; display:flex; gap:8px">
-          <button (click)="adicionarMembros()">Adicionar</button>
+        <div class="admin-membros-acoes">
+          <button (click)="adicionarMembros()" [disabled]="membrosSelecionados().length === 0">Adicionar</button>
         </div>
       </div>
     }

@@ -20,16 +20,18 @@ public class GrupoService {
     private final DocumentoVersaoRepository documentos;
     private final ReuniaoRepository reunioes;
     private final DocumentoService documentoService;
+    private final PermissaoService perms;
 
     public GrupoService(GrupoRepository grupos, UserRepository users, GrupoAlunoRepository grupoAlunos,
                         DocumentoVersaoRepository documentos, ReuniaoRepository reunioes,
-                        DocumentoService documentoService) {
+                        DocumentoService documentoService, PermissaoService perms) {
         this.grupos = grupos;
         this.users = users;
         this.grupoAlunos = grupoAlunos;
         this.documentos = documentos;
         this.reunioes = reunioes;
         this.documentoService = documentoService;
+        this.perms = perms;
     }
 
     @Transactional
@@ -71,6 +73,11 @@ public class GrupoService {
             lista = grupos.findByAlunoId(atual.getId());
         }
         return lista.stream().map(this::toResumo).toList();
+    }
+
+    public List<UserAdminDTO> listarMembros(Long grupoId, User atual) {
+        perms.assertPodeAcessarGrupo(grupoId, atual);
+        return grupoAlunos.findAlunosByGrupoId(grupoId).stream().map(UserAdminDTO::of).toList();
     }
 
     @Transactional

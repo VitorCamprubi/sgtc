@@ -37,6 +37,11 @@ public class GrupoController {
         service.adicionarMembros(id, req.getAlunosIds());
     }
 
+    @GetMapping("/{id}/membros")
+    public List<UserAdminDTO> listarMembros(@PathVariable Long id) {
+        return service.listarMembros(id, auth.getCurrentUser());
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void excluir(@PathVariable Long id) {

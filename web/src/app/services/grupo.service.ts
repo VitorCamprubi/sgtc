@@ -13,6 +13,14 @@ export type AddMembrosRequest = {
   alunosIds: number[];
 };
 
+export type GrupoMembroDTO = {
+  id: number;
+  nome: string;
+  email: string;
+  role: 'ADMIN' | 'ORIENTADOR' | 'COORIENTADOR' | 'ALUNO';
+  ra?: string | null;
+};
+
 @Injectable({ providedIn: 'root' })
 export class GrupoService {
   private http = inject(HttpClient);
@@ -28,6 +36,10 @@ export class GrupoService {
   adicionarMembros(id: number, alunosIds: number[]): Observable<void> {
     const body: AddMembrosRequest = { alunosIds };
     return this.http.post<void>(`/api/grupos/${id}/membros`, body);
+  }
+
+  listarMembros(id: number): Observable<GrupoMembroDTO[]> {
+    return this.http.get<GrupoMembroDTO[]>(`/api/grupos/${id}/membros`);
   }
 
   deletar(id: number): Observable<void> {

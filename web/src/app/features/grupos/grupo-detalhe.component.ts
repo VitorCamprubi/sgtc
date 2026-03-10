@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -6,7 +6,7 @@ import { DocumentosService, DocumentoVersao } from '../../services/documentos.se
 import { ComentariosService, Comentario } from '../../services/comentarios.service';
 import { ReunioesService, Reuniao } from '../../services/reunioes.service';
 import { UsuariosService, Usuario } from '../../services/usuarios.service';
-import { GrupoService } from '../../services/grupo.service';
+import { GrupoMembroDTO, GrupoService } from '../../services/grupo.service';
 import { faDownload, faComments, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
@@ -53,12 +53,18 @@ export class GrupoDetalheComponent implements OnInit {
   // Admin - adicionar membros
   isAdmin = signal<boolean>(false);
   alunos = signal<Usuario[]>([]);
+  membrosGrupo = signal<GrupoMembroDTO[] | null>(null);
+  alunosDisponiveis = computed(() => {
+    const idsMembros = new Set((this.membrosGrupo() ?? []).map((m) => m.id));
+    return this.alunos().filter((a) => !idsMembros.has(a.id));
+  });
   membrosSelecionados = signal<number[]>([]);
 
   ngOnInit() {
     this.grupoId = Number(this.route.snapshot.paramMap.get('id'));
     this.recarregar();
     this.recarregarReunioes();
+    this.recarregarMembros();
     // Carrega contexto de usuário e alunos
     this.usuarios.getUsuarioAtualViaDebug().subscribe((u) => {
       this.isAdmin.set(u?.role === 'ADMIN');
@@ -164,6 +170,14 @@ export class GrupoDetalheComponent implements OnInit {
     });
   }
 
+  recarregarMembros() {
+    this.membrosGrupo.set(null);
+    this.grupos.listarMembros(this.grupoId).subscribe({
+      next: (membros) => this.membrosGrupo.set(membros),
+      error: (e) => this.error.set(`${e.status} ${e.statusText}`),
+    });
+  }
+
   agendarReuniao() {
     const dataHora = this.novaDataHora;
     const pauta = this.novaPauta.trim();
@@ -190,7 +204,10 @@ export class GrupoDetalheComponent implements OnInit {
     const ids = this.membrosSelecionados();
     if (!ids.length) return;
     this.grupos.adicionarMembros(this.grupoId, ids).subscribe({
-      next: () => this.membrosSelecionados.set([]),
+      next: () => {
+        this.membrosSelecionados.set([]);
+        this.recarregarMembros();
+      },
       error: (e) => this.error.set(`${e.status} ${e.statusText}`),
     });
   }
