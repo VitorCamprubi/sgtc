@@ -6,6 +6,7 @@ export type DocumentoVersao = {
   titulo: string;
   versao: number;
   enviadoPor: string;
+  enviadoPorId: number;
   createdAt: string;
   tamanho: number;
 };
@@ -34,5 +35,9 @@ export class DocumentosService {
 
   delete(docId: number) {
     return this.http.delete<void>(`/api/documentos/${docId}`);
+  }
+
+  atualizarTitulo(docId: number, titulo: string) {
+    return this.http.put<DocumentoVersao>(`/api/documentos/${docId}`, { titulo });
   }
 }

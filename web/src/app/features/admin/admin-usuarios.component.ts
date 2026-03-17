@@ -1,11 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  Usuario,
-  UsuarioAdminPayload,
-  UsuariosService,
-} from '../../services/usuarios.service';
+import { Usuario, UsuarioAdminPayload, UsuariosService } from '../../services/usuarios.service';
 
 @Component({
   selector: 'app-admin-usuarios',
@@ -20,25 +16,25 @@ export class AdminUsuariosComponent implements OnInit {
   usuariosAdmin = signal<Usuario[] | null>(null);
   adminError = signal<string | null>(null);
   adminLoading = signal<boolean>(false);
-  adminRoleFiltro = signal<'ALUNO' | 'ORIENTADOR' | 'COORIENTADOR'>('ALUNO');
+  adminRoleFiltro = signal<'ALUNO' | 'PROFESSOR'>('ALUNO');
   editandoId = signal<number | null>(null);
+
   formNome = '';
   formEmail = '';
   formSenha = '';
-  formRole: 'ALUNO' | 'ORIENTADOR' | 'COORIENTADOR' = 'ALUNO';
+  formRole: 'ALUNO' | 'PROFESSOR' = 'ALUNO';
   formRa: string | null = null;
 
   ngOnInit(): void {
     this.carregarUsuariosAdmin(this.adminRoleFiltro());
   }
 
-  carregarUsuariosAdmin(
-    role: 'ALUNO' | 'ORIENTADOR' | 'COORIENTADOR' = this.adminRoleFiltro()
-  ) {
+  carregarUsuariosAdmin(role: 'ALUNO' | 'PROFESSOR' = this.adminRoleFiltro()) {
     this.adminRoleFiltro.set(role);
     this.adminError.set(null);
     this.adminLoading.set(true);
     this.usuariosAdmin.set(null);
+
     this.usuariosApi.listarAdmin(role).subscribe({
       next: (list) => {
         this.usuariosAdmin.set(list);
@@ -57,10 +53,12 @@ export class AdminUsuariosComponent implements OnInit {
     const role = this.formRole;
     const senha = this.formSenha.trim();
     const ra = role === 'ALUNO' ? this.formRa?.trim() || null : null;
+
     if (!nome || !email) {
       this.adminError.set('Preencha nome e email.');
       return null;
     }
+
     const payload: UsuarioAdminPayload = { nome, email, role, ra };
     if (senha) payload.senha = senha;
     return payload;
@@ -69,11 +67,14 @@ export class AdminUsuariosComponent implements OnInit {
   salvarUsuario() {
     const payload = this.payloadAtual();
     if (!payload) return;
+
     const id = this.editandoId();
     this.adminError.set(null);
+
     const req = id
       ? this.usuariosApi.atualizarAdmin(id, payload)
       : this.usuariosApi.criarAdmin(payload);
+
     req.subscribe({
       next: () => {
         this.resetFormUsuario();
@@ -87,13 +88,14 @@ export class AdminUsuariosComponent implements OnInit {
     this.editandoId.set(u.id);
     this.formNome = u.nome;
     this.formEmail = u.email;
-    this.formRole = u.role as 'ALUNO' | 'ORIENTADOR' | 'COORIENTADOR';
+    this.formRole = u.role as 'ALUNO' | 'PROFESSOR';
     this.formRa = u.role === 'ALUNO' ? u.ra ?? null : null;
     this.formSenha = '';
   }
 
   excluirUsuario(u: Usuario) {
-    if (!confirm(`Excluir o usuário "${u.nome}"?`)) return;
+    if (!confirm(`Excluir o usuario "${u.nome}"?`)) return;
+
     this.adminError.set(null);
     this.usuariosApi.excluirAdmin(u.id).subscribe({
       next: () => {

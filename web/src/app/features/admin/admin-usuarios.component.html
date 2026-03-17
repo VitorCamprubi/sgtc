@@ -4,11 +4,11 @@
       <p class="breadcrumbs">
         <span>Admin</span>
         <span aria-hidden="true">/</span>
-        <span>Usuários</span>
+        <span>Usuarios</span>
       </p>
-      <h2>Usuários</h2>
+      <h2>Usuarios</h2>
       <p class="section-subtitle">
-        Cadastre, edite ou remova alunos, orientadores e coorientadores.
+        Cadastre, edite ou remova alunos e professores.
       </p>
     </div>
     <button class="ghost-button" type="button" (click)="carregarUsuariosAdmin(adminRoleFiltro())">
@@ -20,20 +20,19 @@
     <div class="admin-users-list card">
       <div class="list-header">
         <div class="segmented">
-          <button type="button"
-                  [class.active]="adminRoleFiltro() === 'ALUNO'"
-                  (click)="carregarUsuariosAdmin('ALUNO')">
+          <button
+            type="button"
+            [class.active]="adminRoleFiltro() === 'ALUNO'"
+            (click)="carregarUsuariosAdmin('ALUNO')"
+          >
             Alunos
           </button>
-          <button type="button"
-                  [class.active]="adminRoleFiltro() === 'ORIENTADOR'"
-                  (click)="carregarUsuariosAdmin('ORIENTADOR')">
-            Orientadores
-          </button>
-          <button type="button"
-                  [class.active]="adminRoleFiltro() === 'COORIENTADOR'"
-                  (click)="carregarUsuariosAdmin('COORIENTADOR')">
-            Coorientadores
+          <button
+            type="button"
+            [class.active]="adminRoleFiltro() === 'PROFESSOR'"
+            (click)="carregarUsuariosAdmin('PROFESSOR')"
+          >
+            Professores
           </button>
         </div>
       </div>
@@ -47,7 +46,7 @@
       } @else if (usuariosAdmin() === null) {
         <p class="state-info">Selecione um filtro para carregar.</p>
       } @else if (usuariosAdmin()?.length === 0) {
-        <p class="state-info">Nenhum usuário encontrado.</p>
+        <p class="state-info">Nenhum usuario encontrado.</p>
       } @else {
         <div class="table-wrapper">
           <table class="users-table">
@@ -57,7 +56,7 @@
                 <th>Email</th>
                 <th>Perfil</th>
                 @if (adminRoleFiltro() === 'ALUNO') { <th>RA</th> }
-                <th>Ações</th>
+                <th>Acoes</th>
               </tr>
             </thead>
             <tbody>
@@ -82,15 +81,14 @@
     </div>
 
     <div class="admin-users-form card">
-      <h4>{{ editandoId() ? 'Editar usuário' : 'Novo usuário' }}</h4>
+      <h4>{{ editandoId() ? 'Editar usuario' : 'Novo usuario' }}</h4>
       <div class="form-grid">
         <input placeholder="Nome" [(ngModel)]="formNome" />
         <input placeholder="Email" type="email" [(ngModel)]="formEmail" />
         <input placeholder="Senha" type="password" [(ngModel)]="formSenha" [required]="!editandoId()" />
         <select [(ngModel)]="formRole">
           <option value="ALUNO">Aluno</option>
-          <option value="ORIENTADOR">Orientador</option>
-          <option value="COORIENTADOR">Coorientador</option>
+          <option value="PROFESSOR">Professor</option>
         </select>
         @if (formRole === 'ALUNO') {
           <input placeholder="RA (opcional)" [(ngModel)]="formRa" />
@@ -98,7 +96,7 @@
       </div>
       <div class="form-actions">
         <button type="button" (click)="salvarUsuario()">
-          {{ editandoId() ? 'Salvar alterações' : 'Cadastrar' }}
+          {{ editandoId() ? 'Salvar alteracoes' : 'Cadastrar' }}
         </button>
         @if (editandoId()) {
           <button type="button" class="ghost-button" (click)="resetFormUsuario()">Cancelar</button>

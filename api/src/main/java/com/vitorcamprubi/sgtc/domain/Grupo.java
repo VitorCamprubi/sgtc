@@ -18,6 +18,10 @@ public class Grupo {
     @ManyToOne @JoinColumn(name="coorientador_id")
     private User coorientador;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable=false, length = 3, columnDefinition = "varchar(3) default 'TG'")
+    private Materia materia = Materia.TG;
+
     @Column(nullable=false, updatable=false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -30,6 +34,8 @@ public class Grupo {
     public void setOrientador(User orientador) { this.orientador = orientador; }
     public User getCoorientador() { return coorientador; }
     public void setCoorientador(User coorientador) { this.coorientador = coorientador; }
+    public Materia getMateria() { return materia; }
+    public void setMateria(Materia materia) { this.materia = materia; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

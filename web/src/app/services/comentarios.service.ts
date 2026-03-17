@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 
 export type Comentario = {
   id: number;
+  autorId: number;
   autor: string;
   texto: string;
   createdAt: string;
@@ -20,6 +21,14 @@ export class ComentariosService {
     return this.http.post<Comentario>(`/api/documentos/${docId}/comentarios`, {
       texto,
     });
+  }
+
+  atualizar(comentarioId: number, texto: string) {
+    return this.http.put<Comentario>(`/api/comentarios/${comentarioId}`, { texto });
+  }
+
+  excluir(comentarioId: number) {
+    return this.http.delete<void>(`/api/comentarios/${comentarioId}`);
   }
 }
 

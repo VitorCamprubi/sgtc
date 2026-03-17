@@ -19,9 +19,20 @@ export class ReunioesService {
 
   agendar(
     grupoId: number,
-    req: { dataHora: string; pauta: string; observacoes: string }
+    req: { dataHora: string; pauta: string; observacoes?: string | null }
   ) {
     return this.http.post<Reuniao>(`/api/grupos/${grupoId}/reunioes`, req);
+  }
+
+  atualizar(
+    reuniaoId: number,
+    req: { dataHora: string; pauta: string; observacoes?: string | null }
+  ) {
+    return this.http.put<Reuniao>(`/api/reunioes/${reuniaoId}`, req);
+  }
+
+  excluir(reuniaoId: number) {
+    return this.http.delete<void>(`/api/reunioes/${reuniaoId}`);
   }
 }
 

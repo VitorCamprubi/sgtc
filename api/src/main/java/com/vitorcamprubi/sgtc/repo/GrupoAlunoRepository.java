@@ -14,5 +14,6 @@ public interface GrupoAlunoRepository extends JpaRepository<GrupoAluno, Long> {
     List<User> findAlunosByGrupoId(@Param("grupoId") Long grupoId);
     long countByGrupoId(Long grupoId);
     void deleteByGrupoId(Long grupoId);
+    int deleteByGrupoIdAndAlunoId(Long grupoId, Long alunoId);
     long countByAlunoId(Long alunoId);
 }

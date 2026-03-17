@@ -1,10 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { GrupoService, GrupoCreateRequest } from '../../services/grupo.service';
-import { UsuariosService, Usuario } from '../../services/usuarios.service';
+import { RouterLink } from '@angular/router';
 import { GrupoResumoDTO } from '../../model/grupo-resumo.dto';
+import { GrupoCreateRequest, GrupoService } from '../../services/grupo.service';
+import { Usuario, UsuariosService } from '../../services/usuarios.service';
 
 @Component({
   selector: 'app-grupos',
@@ -20,23 +20,29 @@ export class GruposComponent implements OnInit {
   grupos = signal<GrupoResumoDTO[] | null>(null);
   error = signal<string | null>(null);
   isAdmin = signal<boolean>(false);
-  usuarios = signal<Usuario[]>([]);
-  orientadores = signal<Usuario[]>([]);
-  coorientadores = signal<Usuario[]>([]);
+  professores = signal<Usuario[]>([]);
   deletando = signal<number | null>(null);
+  editandoGrupoId = signal<number | null>(null);
+
+  novoTitulo = '';
+  novaMateria: 'TG' | 'PTG' | null = null;
+  novoOrientadorId: number | null = null;
+  novoCoorientadorId: number | null = null;
+
+  editarTitulo = '';
+  editarMateria: 'TG' | 'PTG' | null = null;
+  editarOrientadorId: number | null = null;
+  editarCoorientadorId: number | null = null;
 
   ngOnInit(): void {
     this.carregarMeus();
-    // carrega info de usuarios para acoes de Admin
-    this.usuariosApi.listarPublic().subscribe({
-      next: (us) => {
-        this.usuarios.set(us);
-        this.orientadores.set(us.filter((u) => u.role === 'ORIENTADOR'));
-        this.coorientadores.set(us.filter((u) => u.role === 'COORIENTADOR'));
-      },
-    });
-    this.usuariosApi.getUsuarioAtualViaDebug().subscribe((u) => {
-      this.isAdmin.set(u?.role === 'ADMIN');
+
+    this.usuariosApi.getUsuarioAtual().subscribe((u) => {
+      const admin = u?.role === 'ADMIN';
+      this.isAdmin.set(admin);
+      if (admin) {
+        this.carregarProfessores();
+      }
     });
   }
 
@@ -45,14 +51,14 @@ export class GruposComponent implements OnInit {
     this.grupos.set(null);
     this.gruposApi.listarMeus().subscribe({
       next: (data) => this.grupos.set(data),
-      error: (err) =>
-        this.error.set(`${err.status ?? ''} ${err.statusText ?? 'Erro'}`.trim()),
+      error: (err) => this.error.set(`${err.status ?? ''} ${err.statusText ?? 'Erro'}`.trim()),
     });
   }
 
   excluirGrupo(id: number, titulo: string) {
     if (!this.isAdmin()) return;
-    if (!confirm(`Excluir o grupo "${titulo}"? Esta ação é definitiva.`)) return;
+    if (!confirm(`Excluir o grupo "${titulo}"? Esta acao eh definitiva.`)) return;
+
     this.error.set(null);
     this.deletando.set(id);
     this.gruposApi.deletar(id).subscribe({
@@ -67,32 +73,89 @@ export class GruposComponent implements OnInit {
     });
   }
 
-  // --- Admin: usuários (alunos/professores) ---
-  // Admin: criar grupo
-  novoTitulo = '';
-  novoOrientadorId: number | null = null;
-  novoCoorientadorId: number | null = null;
-
   criarGrupo(): void {
     this.error.set(null);
+
     const payload: GrupoCreateRequest = {
       titulo: this.novoTitulo.trim(),
+      materia: this.novaMateria!,
       orientadorId: this.novoOrientadorId!,
       coorientadorId: this.novoCoorientadorId || null,
     };
 
-    if (!payload.titulo || !payload.orientadorId) {
-      this.error.set('Preencha titulo e orientador.');
+    if (!payload.titulo || !payload.orientadorId || !payload.materia) {
+      this.error.set('Preencha titulo, materia e orientador.');
+      return;
+    }
+
+    if (payload.orientadorId === payload.coorientadorId) {
+      this.error.set('O mesmo professor nao pode ser orientador e coorientador no mesmo grupo.');
       return;
     }
 
     this.gruposApi.criar(payload).subscribe({
       next: () => {
         this.novoTitulo = '';
+        this.novaMateria = null;
         this.novoOrientadorId = null;
         this.novoCoorientadorId = null;
         this.carregarMeus();
       },
+      error: (e) => this.error.set(`${e.status} ${e.statusText}`),
+    });
+  }
+
+  iniciarEdicaoGrupo(g: GrupoResumoDTO): void {
+    if (!this.isAdmin()) return;
+    this.editandoGrupoId.set(g.id);
+    this.editarTitulo = g.titulo;
+    this.editarMateria = g.materia;
+    this.editarOrientadorId = g.orientadorId;
+    this.editarCoorientadorId = g.coorientadorId;
+  }
+
+  cancelarEdicaoGrupo(): void {
+    this.editandoGrupoId.set(null);
+    this.editarTitulo = '';
+    this.editarMateria = null;
+    this.editarOrientadorId = null;
+    this.editarCoorientadorId = null;
+  }
+
+  salvarEdicaoGrupo(): void {
+    const grupoId = this.editandoGrupoId();
+    if (!this.isAdmin() || !grupoId) return;
+
+    const payload: GrupoCreateRequest = {
+      titulo: this.editarTitulo.trim(),
+      materia: this.editarMateria!,
+      orientadorId: this.editarOrientadorId!,
+      coorientadorId: this.editarCoorientadorId || null,
+    };
+
+    if (!payload.titulo || !payload.orientadorId || !payload.materia) {
+      this.error.set('Preencha titulo, materia e orientador para editar o grupo.');
+      return;
+    }
+
+    if (payload.orientadorId === payload.coorientadorId) {
+      this.error.set('O mesmo professor nao pode ser orientador e coorientador no mesmo grupo.');
+      return;
+    }
+
+    this.error.set(null);
+    this.gruposApi.atualizar(grupoId, payload).subscribe({
+      next: () => {
+        this.cancelarEdicaoGrupo();
+        this.carregarMeus();
+      },
+      error: (e) => this.error.set(`${e.status} ${e.statusText}`),
+    });
+  }
+
+  private carregarProfessores(): void {
+    this.usuariosApi.listarAdmin('PROFESSOR').subscribe({
+      next: (professores) => this.professores.set(professores),
       error: (e) => this.error.set(`${e.status} ${e.statusText}`),
     });
   }

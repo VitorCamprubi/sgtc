@@ -1,21 +1,34 @@
 package com.vitorcamprubi.sgtc.service;
 
-import com.vitorcamprubi.sgtc.domain.*;
-import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
+import com.vitorcamprubi.sgtc.domain.DocumentoVersao;
+import com.vitorcamprubi.sgtc.domain.Grupo;
+import com.vitorcamprubi.sgtc.domain.Role;
+import com.vitorcamprubi.sgtc.domain.User;
 import com.vitorcamprubi.sgtc.repo.DocumentoComentarioRepository;
+import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.*;
-import org.springframework.http.*;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 public class DocumentoService {
+    private static final Pattern UNSAFE_FILENAME_CHARS = Pattern.compile("[^a-zA-Z0-9._-]");
+
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
@@ -24,25 +37,52 @@ public class DocumentoService {
     private final PermissaoService perms;
 
     public DocumentoService(DocumentoVersaoRepository docs, DocumentoComentarioRepository comentarios, PermissaoService perms) {
-        this.docs = docs; this.comentarios = comentarios; this.perms = perms;
+        this.docs = docs;
+        this.comentarios = comentarios;
+        this.perms = perms;
     }
 
     @Transactional
     public DocumentoVersao upload(Long grupoId, String titulo, MultipartFile file, User atual) throws IOException {
+        if (titulo == null || titulo.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Titulo do documento eh obrigatorio");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Arquivo obrigatorio");
+        }
+
         Grupo g = perms.assertPodeAcessarGrupo(grupoId, atual);
         int next = docs.countByGrupoId(grupoId) + 1;
 
-        Path dir = Paths.get(uploadDir, String.valueOf(grupoId));
+        Path dir = Paths.get(uploadDir, String.valueOf(grupoId)).toAbsolutePath().normalize();
         Files.createDirectories(dir);
-        String original = file.getOriginalFilename()==null ? "arquivo" : file.getOriginalFilename();
-        String filename = "v" + next + "_" + original.replaceAll("\\s+", "_");
-        Path dest = dir.resolve(filename);
+
+        String original = file.getOriginalFilename() == null ? "arquivo" : file.getOriginalFilename();
+        String safeOriginal = Paths.get(original).getFileName().toString().replace(' ', '_');
+        safeOriginal = UNSAFE_FILENAME_CHARS.matcher(safeOriginal).replaceAll("_");
+        if (safeOriginal.isBlank()) {
+            safeOriginal = "arquivo";
+        }
+
+        String filename = "v" + next + "_" + safeOriginal;
+        Path dest = dir.resolve(filename).normalize();
+        if (!dest.startsWith(dir)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome de arquivo invalido");
+        }
+
         file.transferTo(dest);
 
+        String mimeType = Files.probeContentType(dest);
+        if (mimeType == null || mimeType.isBlank()) {
+            mimeType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        }
+
         DocumentoVersao d = new DocumentoVersao();
-        d.setGrupo(g); d.setTitulo(titulo); d.setVersao(next);
+        d.setGrupo(g);
+        d.setTitulo(titulo.trim());
+        d.setVersao(next);
         d.setFilePath(dest.toString());
-        d.setMimeType(Files.probeContentType(dest));
+        d.setMimeType(mimeType);
         d.setTamanho(Files.size(dest));
         d.setEnviadoPor(atual);
         return docs.save(d);
@@ -54,33 +94,74 @@ public class DocumentoService {
     }
 
     public ResponseEntity<Resource> download(Long docId, User atual) throws IOException {
-        DocumentoVersao d = docs.findById(docId).orElseThrow();
+        DocumentoVersao d = docs.findById(docId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Documento nao encontrado"));
+
         perms.assertPodeAcessarGrupo(d.getGrupo().getId(), atual);
-        Path path = Paths.get(d.getFilePath());
+
+        Path path = Paths.get(d.getFilePath()).toAbsolutePath().normalize();
+        if (!Files.exists(path) || !Files.isReadable(path)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo nao encontrado");
+        }
+
         Resource res = new UrlResource(path.toUri());
-        String ct = d.getMimeType()!=null ? d.getMimeType() : "application/octet-stream";
+        if (!res.exists() || !res.isReadable()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo nao encontrado");
+        }
+
+        MediaType mediaType;
+        try {
+            mediaType = MediaType.parseMediaType(d.getMimeType());
+        } catch (Exception ex) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+path.getFileName()+"\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + path.getFileName() + "\"")
                 .contentLength(Files.size(path))
-                .contentType(MediaType.parseMediaType(ct))
+                .contentType(mediaType)
                 .body(res);
     }
 
     @Transactional
+    public DocumentoVersao atualizarTitulo(Long docId, String titulo, User atual) {
+        if (titulo == null || titulo.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Titulo do documento eh obrigatorio");
+        }
+
+        DocumentoVersao d = docs.findById(docId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Documento nao encontrado"));
+
+        assertPodeAlterarOuExcluirDocumento(d, atual);
+        d.setTitulo(titulo.trim());
+        return docs.save(d);
+    }
+
+    @Transactional
     public void delete(Long docId, User atual) throws IOException {
-        DocumentoVersao d = docs.findById(docId).orElseThrow();
+        DocumentoVersao d = docs.findById(docId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Documento nao encontrado"));
+
+        assertPodeAlterarOuExcluirDocumento(d, atual);
+
+        comentarios.deleteByDocumentoId(docId);
+
+        try {
+            Files.deleteIfExists(Paths.get(d.getFilePath()));
+        } catch (Exception ignored) {
+            // arquivo pode nao existir no disco, mas o registro precisa ser removido
+        }
+
+        docs.delete(d);
+    }
+
+    private void assertPodeAlterarOuExcluirDocumento(DocumentoVersao d, User atual) {
         Grupo g = d.getGrupo();
         boolean pode = atual.getRole() == Role.ADMIN
                 || perms.isOrientadorOuCoorientador(g, atual)
                 || (d.getEnviadoPor() != null && d.getEnviadoPor().getId().equals(atual.getId()));
         if (!pode) {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN, "Sem permissão");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissao");
         }
-        // remove comentários vinculados
-        comentarios.deleteByDocumentoId(docId);
-        // apaga arquivo físico
-        try { Files.deleteIfExists(Paths.get(d.getFilePath())); } catch (Exception ignored) {}
-        // remove registro
-        docs.delete(d);
     }
 }

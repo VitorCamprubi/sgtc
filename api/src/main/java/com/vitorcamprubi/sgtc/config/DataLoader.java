@@ -4,10 +4,12 @@ import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
 import com.vitorcamprubi.sgtc.repo.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
+@Order(1)
 public class DataLoader implements CommandLineRunner {
     private final UserRepository repo;
     private final PasswordEncoder enc;
@@ -26,17 +28,17 @@ public class DataLoader implements CommandLineRunner {
             admin.setRole(Role.ADMIN);
             repo.save(admin);
         }
-        if (repo.findByEmail("orientador@sgtc.local").isEmpty()) {
+        if (repo.findByEmail("professor@sgtc.local").isEmpty()) {
             var u = new User();
-            u.setNome("Prof. Orientador");
-            u.setEmail("orientador@sgtc.local");
-            u.setSenhaHash(enc.encode("ori123"));
-            u.setRole(Role.ORIENTADOR);
+            u.setNome("Professor");
+            u.setEmail("professor@sgtc.local");
+            u.setSenhaHash(enc.encode("prof123"));
+            u.setRole(Role.PROFESSOR);
             repo.save(u);
         }
         if (repo.findByEmail("aluno@sgtc.local").isEmpty()) {
             var u = new User();
-            u.setNome("Aluno 1");
+            u.setNome("Aluno");
             u.setEmail("aluno@sgtc.local");
             u.setSenhaHash(enc.encode("aluno123"));
             u.setRole(Role.ALUNO);

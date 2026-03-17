@@ -30,6 +30,8 @@ export const authInterceptor: HttpInterceptorFn = (
         // limpa e manda pro login
         sessionStorage.removeItem('sgtc_auth');
         localStorage.removeItem('sgtc_auth');
+        sessionStorage.removeItem('sgtc_user');
+        localStorage.removeItem('sgtc_user');
         router.navigateByUrl('/login');
       }
       return throwError(() => err);

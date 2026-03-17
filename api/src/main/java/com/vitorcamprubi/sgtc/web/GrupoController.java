@@ -26,6 +26,12 @@ public class GrupoController {
         return service.criar(req);
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public GrupoResumoDTO atualizar(@PathVariable Long id, @RequestBody @Valid GrupoCreateRequest req) {
+        return service.atualizar(id, req);
+    }
+
     @GetMapping("/me")
     public List<GrupoResumoDTO> meusGrupos() {
         return service.listarDoUsuario(auth.getCurrentUser());
@@ -37,9 +43,21 @@ public class GrupoController {
         service.adicionarMembros(id, req.getAlunosIds());
     }
 
+    @PutMapping("/{id}/membros")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void atualizarMembros(@PathVariable Long id, @RequestBody @Valid UpdateMembrosRequest req) {
+        service.atualizarMembros(id, req.getAlunosIds());
+    }
+
     @GetMapping("/{id}/membros")
     public List<UserAdminDTO> listarMembros(@PathVariable Long id) {
         return service.listarMembros(id, auth.getCurrentUser());
+    }
+
+    @DeleteMapping("/{id}/membros/{alunoId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void removerMembro(@PathVariable Long id, @PathVariable Long alunoId) {
+        service.removerMembro(id, alunoId);
     }
 
     @DeleteMapping("/{id}")

@@ -2,7 +2,12 @@ package com.vitorcamprubi.sgtc.service;
 
 import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
-import com.vitorcamprubi.sgtc.repo.*;
+import com.vitorcamprubi.sgtc.repo.DocumentoComentarioRepository;
+import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
+import com.vitorcamprubi.sgtc.repo.GrupoAlunoRepository;
+import com.vitorcamprubi.sgtc.repo.GrupoRepository;
+import com.vitorcamprubi.sgtc.repo.ReuniaoRepository;
+import com.vitorcamprubi.sgtc.repo.UserRepository;
 import com.vitorcamprubi.sgtc.web.dto.UserAdminDTO;
 import com.vitorcamprubi.sgtc.web.dto.UserAdminRequest;
 import org.springframework.http.HttpStatus;
@@ -45,8 +50,9 @@ public class UserAdminService {
     public UserAdminDTO criar(UserAdminRequest req) {
         validarRolePermitida(req.getRole());
         if (users.findByEmail(req.getEmail()).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já cadastrado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail ja cadastrado");
         }
+
         User u = new User();
         preencher(u, req, true);
         return UserAdminDTO.of(users.save(u));
@@ -55,11 +61,16 @@ public class UserAdminService {
     @Transactional
     public UserAdminDTO atualizar(Long id, UserAdminRequest req) {
         validarRolePermitida(req.getRole());
+
         User u = users.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado"));
+
         users.findByEmail(req.getEmail())
                 .filter(other -> !other.getId().equals(id))
-                .ifPresent(other -> { throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já cadastrado"); });
+                .ifPresent(other -> {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail ja cadastrado");
+                });
+
         preencher(u, req, false);
         return UserAdminDTO.of(users.save(u));
     }
@@ -67,22 +78,23 @@ public class UserAdminService {
     @Transactional
     public void excluir(Long id) {
         User u = users.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado"));
 
-        // Impede excluir se existirem vínculos que inviabilizam integridade
-        if (u.getRole() == Role.ORIENTADOR || u.getRole() == Role.COORIENTADOR) {
+        if (u.getRole() == Role.PROFESSOR) {
             long qtdGrupos = grupos.countByOrientadorIdOrCoorientadorId(id, id);
             if (qtdGrupos > 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuário está atribuído como orientador/coorientador em grupos");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario esta atribuido como orientador/coorientador em grupos");
             }
         }
+
         if (grupoAlunos.countByAlunoId(id) > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuário está vinculado a grupos como aluno");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario esta vinculado a grupos como aluno");
         }
+
         if (docs.countByEnviadoPorId(id) > 0 ||
-            comentarios.countByAutorId(id) > 0 ||
-            reunioes.countByCriadoPorId(id) > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuário possui registros (documentos/comentários/reuniões)");
+                comentarios.countByAutorId(id) > 0 ||
+                reunioes.countByCriadoPorId(id) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario possui registros (documentos/comentarios/reunioes)");
         }
 
         users.delete(u);
@@ -97,15 +109,15 @@ public class UserAdminService {
         if (req.getSenha() != null && !req.getSenha().isBlank()) {
             u.setSenhaHash(enc.encode(req.getSenha()));
         } else if (isCreate) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha é obrigatória");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha eh obrigatoria");
         }
     }
 
     private void validarRolePermitida(Role role) {
         if (role == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role obrigatória");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role obrigatoria");
         }
-        if (!(role == Role.ALUNO || role == Role.ORIENTADOR || role == Role.COORIENTADOR)) {
+        if (!(role == Role.ALUNO || role == Role.PROFESSOR)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Apenas alunos ou professores podem ser gerenciados aqui");
         }
     }

@@ -7,7 +7,7 @@ Projeto exemplo com:
 
 ## Recursos principais
 - Autenticacao com JWT Bearer (`/api/auth/login`)
-- Controle de acesso por perfil (`ADMIN`, `ORIENTADOR`, `COORIENTADOR`, `ALUNO`)
+- Controle de acesso por perfil (`ADMIN`, `PROFESSOR`, `ALUNO`)
 - Gestao de grupos e membros
 - Upload, listagem, download e exclusao de documentos
 - Comentarios em documentos
@@ -58,7 +58,7 @@ No modo dev, o Angular faz proxy de `/api/**` e `/public/**` para `http://localh
 
 ## Credenciais seed (DataLoader)
 - ADMIN: `admin@sgtc.local` / `admin123`
-- ORIENTADOR: `orientador@sgtc.local` / `ori123`
+- PROFESSOR: `professor@sgtc.local` / `ori123`
 - ALUNO: `aluno@sgtc.local` / `aluno123`
 
 ## Docker (stack completa)
@@ -119,7 +119,9 @@ docker compose down
 
 ### Publico
 - `GET /public/health`
-- `GET /public/debug/users`
+
+### Debug (apenas ADMIN)
+- `GET /api/debug/users`
 
 ## Troubleshooting rapido
 - `401/403`: confirme login JWT e perfil do usuario.

@@ -25,19 +25,54 @@
       </div>
       <div class="form-grid">
         <input placeholder="Titulo" [(ngModel)]="novoTitulo" />
+        <select [(ngModel)]="novaMateria">
+          <option [ngValue]="null">Selecione materia</option>
+          <option value="TG">TG</option>
+          <option value="PTG">PTG</option>
+        </select>
         <select [(ngModel)]="novoOrientadorId">
           <option [ngValue]="null">Selecione orientador</option>
-          @for (u of orientadores(); track u.id) {
+          @for (u of professores(); track u.id) {
             <option [ngValue]="u.id">{{ u.nome }}</option>
           }
         </select>
         <select [(ngModel)]="novoCoorientadorId">
           <option [ngValue]="null">Coorientador (opcional)</option>
-          @for (u of coorientadores(); track u.id) {
+          @for (u of professores(); track u.id) {
             <option [ngValue]="u.id">{{ u.nome }}</option>
           }
         </select>
         <button type="button" (click)="criarGrupo()">Criar</button>
+      </div>
+    </section>
+  }
+
+  @if (isAdmin() && editandoGrupoId()) {
+    <section class="card admin-card">
+      <div class="card-header">
+        <h3>Admin - Editar grupo #{{ editandoGrupoId() }}</h3>
+      </div>
+      <div class="form-grid">
+        <input placeholder="Titulo" [(ngModel)]="editarTitulo" />
+        <select [(ngModel)]="editarMateria">
+          <option [ngValue]="null">Selecione materia</option>
+          <option value="TG">TG</option>
+          <option value="PTG">PTG</option>
+        </select>
+        <select [(ngModel)]="editarOrientadorId">
+          <option [ngValue]="null">Selecione orientador</option>
+          @for (u of professores(); track u.id) {
+            <option [ngValue]="u.id">{{ u.nome }}</option>
+          }
+        </select>
+        <select [(ngModel)]="editarCoorientadorId">
+          <option [ngValue]="null">Coorientador (opcional)</option>
+          @for (u of professores(); track u.id) {
+            <option [ngValue]="u.id">{{ u.nome }}</option>
+          }
+        </select>
+        <button type="button" (click)="salvarEdicaoGrupo()">Salvar</button>
+        <button type="button" class="ghost-button" (click)="cancelarEdicaoGrupo()">Cancelar</button>
       </div>
     </section>
   }
@@ -62,6 +97,7 @@
               <tr>
                 <th>ID</th>
                 <th>Titulo</th>
+                <th>Materia</th>
                 <th>Orientador</th>
                 <th>Coorientador</th>
                 <th>Membros</th>
@@ -73,11 +109,16 @@
                 <tr>
                   <td>{{ g.id }}</td>
                   <td><a [routerLink]="['/grupos', g.id]">{{ g.titulo }}</a></td>
+                  <td>{{ g.materia }}</td>
                   <td>{{ g.orientadorNome || '-' }}</td>
                   <td>{{ g.coorientadorNome || '-' }}</td>
                   <td class="members-count">{{ g.totalMembros }}</td>
                   @if (isAdmin()) {
-                    <td>
+                    <td class="actions">
+                      <button type="button" class="ghost-button"
+                              (click)="iniciarEdicaoGrupo(g)">
+                        Editar
+                      </button>
                       <button type="button" class="ghost-button danger"
                               [disabled]="deletando() === g.id"
                               (click)="excluirGrupo(g.id, g.titulo)">
