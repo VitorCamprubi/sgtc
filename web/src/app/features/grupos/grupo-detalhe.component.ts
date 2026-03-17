@@ -402,6 +402,12 @@ export class GrupoDetalheComponent implements OnInit {
     });
   }
 
+  atualizarPainel() {
+    this.recarregar();
+    this.recarregarReunioes();
+    this.recarregarMembros();
+  }
+
   private toDateTimeLocalValue(dataHora: string): string {
     return dataHora.length >= 16 ? dataHora.slice(0, 16) : dataHora;
   }

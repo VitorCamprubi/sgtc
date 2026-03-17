@@ -5,7 +5,7 @@
 .admin-page {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .section-header {
@@ -43,6 +43,11 @@
   background: transparent;
   color: var(--sgtc-primary);
   border: 1px solid rgba(10, 132, 255, 0.3);
+  box-shadow: none;
+}
+
+.ghost-button:hover {
+  background: rgba(10, 132, 255, 0.1);
 }
 
 .ghost-button.danger {
@@ -50,10 +55,14 @@
   border-color: rgba(200, 30, 30, 0.35);
 }
 
+.ghost-button.danger:hover {
+  background: rgba(200, 30, 30, 0.08);
+}
+
 .admin-users-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .card {
@@ -120,8 +129,9 @@
 .users-table th,
 .users-table td {
   border-bottom: 1px solid var(--sgtc-border);
-  padding: 0.85rem 0.5rem;
+  padding: 0.8rem 0.55rem;
   text-align: left;
+  vertical-align: middle;
 }
 
 .users-table th {
@@ -135,6 +145,7 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .admin-users-form h4 {
@@ -152,6 +163,7 @@
   gap: 0.75rem;
   margin-top: 0.75rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 800px) {

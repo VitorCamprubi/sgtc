@@ -1,24 +1,35 @@
-<h2>Grupo {{ grupoId }}</h2>
+<section class="detalhe-page">
+  <header class="detalhe-header">
+    <div>
+      <h2>Grupo {{ grupoId }}</h2>
+      <p class="section-subtitle">Gerencie documentos, comentarios, reunioes e membros do grupo.</p>
+    </div>
+    <button type="button" class="ghost-small" (click)="atualizarPainel()">Atualizar painel</button>
+  </header>
 
-<div class="main-grupo-detalhe">
-  <div class="section-grupo-detalhe">
-    <h3>Documentos</h3>
-    <div class="grupo-detalhe-input-documen">
-      <input type="text" placeholder="Titulo do documento" [(ngModel)]="tituloDocumento" />
-      <input #fileInput type="file" (change)="onFileSelected($event)" />
-      <button (click)="uploadFromState(fileInput)" [disabled]="!tituloDocumento.trim() || !arquivoSelecionado">
-        Enviar
-      </button>
-      @if (error()) {
-        <span style="color:crimson; margin-left:8px">{{ error() }}</span>
-      }
+  @if (error()) {
+    <p class="error-banner">Erro: {{ error() }}</p>
+  }
+
+  <section class="card-block">
+    <div class="block-header">
+      <h3>Documentos</h3>
+      <p class="block-subtitle">Envie novos arquivos e gerencie versoes existentes.</p>
     </div>
 
-    <div class="grupo-detalhe-table">
+    <div class="upload-grid">
+      <input type="text" placeholder="Titulo do documento" [(ngModel)]="tituloDocumento" />
+      <input #fileInput type="file" (change)="onFileSelected($event)" />
+      <button (click)="uploadFromState(fileInput)" [disabled]="!tituloDocumento.trim() || !arquivoSelecionado">Enviar</button>
+    </div>
+
+    <div class="table-shell">
       @if (lista() === null) {
-        <p>Carregando...</p>
+        <p class="state-info pad">Carregando...</p>
+      } @else if (lista()?.length === 0) {
+        <p class="state-info pad">Nenhum documento enviado.</p>
       } @else {
-        <table cellspacing="0" cellpadding="6" style="width:100%">
+        <table class="data-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -50,7 +61,7 @@
                 <td>{{ d.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td>{{ d.tamanho }}</td>
                 <td>
-                  <div class="content-btn-act-table">
+                  <div class="actions-inline">
                     @if (canDelete(d)) {
                       <button type="button" class="ghost-small" (click)="iniciarEdicaoDocumento(d)">Editar</button>
                     }
@@ -73,137 +84,146 @@
         </table>
       }
     </div>
-  </div>
+  </section>
 
-  <div class="section-grupo-detalhe">
-    <div class="grupo-detalhe-comentarios">
+  <section class="card-block">
+    <div class="block-header">
+      <h3>Comentarios</h3>
       @if (!docSelecionado()) {
-        <p><strong>Comentarios</strong></p>
-        <p>Selecione um documento para ver/comentar.</p>
+        <p class="block-subtitle">Selecione um documento na tabela acima para ver ou enviar comentarios.</p>
       } @else {
-        <p><strong>Comentarios do documento:</strong> {{ docSelecionado()?.titulo }} v{{ docSelecionado()?.versao }}</p>
-        @if (canComment()) {
-          <div class="comentario-input">
-            <textarea [(ngModel)]="novoComentario" placeholder="Novo comentario" rows="5"></textarea>
-            <button (click)="enviarComentario()" [disabled]="!novoComentario.trim()">Enviar</button>
-          </div>
-        }
-        @if (comentariosDoc() === null) {
-          <p>Carregando comentarios...</p>
-        } @else if (comentariosDoc()?.length === 0) {
-          <p>Nenhum comentario.</p>
-        } @else {
-          <div class="lista-comentarios">
-            <ul class="content-comentarios">
-              @for (c of comentariosDoc()?.slice()?.reverse(); track c.id) {
-                <li>
-                  <div>
-                    <strong>{{ c.autor }}</strong>
-                    <small>{{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}</small>
+        <p class="block-subtitle">Documento selecionado: {{ docSelecionado()?.titulo }} v{{ docSelecionado()?.versao }}</p>
+      }
+    </div>
+
+    @if (docSelecionado()) {
+      @if (canComment()) {
+        <div class="comentario-input">
+          <textarea [(ngModel)]="novoComentario" placeholder="Novo comentario" rows="4"></textarea>
+          <button (click)="enviarComentario()" [disabled]="!novoComentario.trim()">Enviar comentario</button>
+        </div>
+      }
+
+      @if (comentariosDoc() === null) {
+        <p class="state-info">Carregando comentarios...</p>
+      } @else if (comentariosDoc()?.length === 0) {
+        <p class="state-info">Nenhum comentario.</p>
+      } @else {
+        <ul class="comments-list">
+          @for (c of comentariosDoc()?.slice()?.reverse(); track c.id) {
+            <li class="comment-card">
+              <div class="comment-meta">
+                <strong>{{ c.autor }}</strong>
+                <small>{{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}</small>
+              </div>
+              @if (editandoComentarioId() === c.id) {
+                <div class="comentario-input">
+                  <textarea [(ngModel)]="textoComentarioEditando" rows="3"></textarea>
+                  <div class="inline-actions">
+                    <button (click)="salvarEdicaoComentario(c)" [disabled]="!textoComentarioEditando.trim()">Salvar</button>
+                    <button type="button" class="ghost-small" (click)="cancelarEdicaoComentario()">Cancelar</button>
                   </div>
-                  @if (editandoComentarioId() === c.id) {
-                    <div class="comentario-input">
-                      <textarea [(ngModel)]="textoComentarioEditando" rows="4"></textarea>
+                </div>
+              } @else {
+                <p class="comment-text">{{ c.texto }}</p>
+                @if (podeGerenciarComentario(c)) {
+                  <div class="inline-actions">
+                    <button type="button" class="ghost-small" (click)="iniciarEdicaoComentario(c)">Editar</button>
+                    <button type="button" class="ghost-small danger" (click)="excluirComentario(c)">Excluir</button>
+                  </div>
+                }
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  </section>
+
+  <section class="card-block">
+    <div class="block-header">
+      <h3>Reunioes</h3>
+      <p class="block-subtitle">Acompanhe a agenda e historico de reunioes do grupo.</p>
+    </div>
+
+    @if (canSchedule()) {
+      <div class="form-reuniao">
+        <input type="datetime-local" [(ngModel)]="novaDataHora" />
+        <input placeholder="Pauta" [(ngModel)]="novaPauta" />
+        <input placeholder="Observacoes" [(ngModel)]="novasObs" />
+        <button (click)="agendarReuniao()">Agendar</button>
+      </div>
+    }
+
+    <div class="table-shell">
+      @if (listaReunioes() === null) {
+        <p class="state-info pad">Carregando...</p>
+      } @else if (listaReunioes()?.length === 0) {
+        <p class="state-info pad">Nenhuma reuniao.</p>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Pauta</th>
+              <th>Observacoes</th>
+              <th>Criado por</th>
+              @if (canSchedule()) { <th>Acoes</th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of listaReunioes(); track r.id) {
+              <tr>
+                @if (editandoReuniaoId() === r.id) {
+                  <td><input type="datetime-local" [(ngModel)]="editarDataHora" /></td>
+                  <td><input type="text" [(ngModel)]="editarPauta" /></td>
+                  <td><input type="text" [(ngModel)]="editarObservacoes" /></td>
+                } @else {
+                  <td>{{ r.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ r.pauta }}</td>
+                  <td>{{ r.observacoes }}</td>
+                }
+                <td>{{ r.criadoPor }}</td>
+                @if (canSchedule()) {
+                  <td>
+                    @if (editandoReuniaoId() === r.id) {
                       <div class="inline-actions">
-                        <button (click)="salvarEdicaoComentario(c)" [disabled]="!textoComentarioEditando.trim()">Salvar</button>
-                        <button type="button" class="ghost-small" (click)="cancelarEdicaoComentario()">Cancelar</button>
+                        <button type="button" (click)="salvarEdicaoReuniao()">Salvar</button>
+                        <button type="button" class="ghost-small" (click)="cancelarEdicaoReuniao()">Cancelar</button>
                       </div>
-                    </div>
-                  } @else {
-                    <div>{{ c.texto }}</div>
-                    @if (podeGerenciarComentario(c)) {
+                    } @else {
                       <div class="inline-actions">
-                        <button type="button" class="ghost-small" (click)="iniciarEdicaoComentario(c)">Editar</button>
-                        <button type="button" class="ghost-small danger" (click)="excluirComentario(c)">Excluir</button>
+                        <button type="button" class="ghost-small" (click)="iniciarEdicaoReuniao(r)">Editar</button>
+                        <button type="button" class="ghost-small danger" (click)="excluirReuniao(r)">Excluir</button>
                       </div>
                     }
-                  }
-                </li>
-              }
-            </ul>
-          </div>
-        }
-      }
-    </div>
-  </div>
-
-  <div class="section-grupo-detalhe">
-    <div class="content-reuniao">
-      <h3>Reunioes</h3>
-
-      @if (canSchedule()) {
-        <div class="reuniao-input">
-          <input type="datetime-local" [(ngModel)]="novaDataHora" />
-          <input placeholder="Pauta" [(ngModel)]="novaPauta" />
-          <input placeholder="Observacoes" [(ngModel)]="novasObs" />
-          <button (click)="agendarReuniao()">Agendar</button>
-        </div>
-      }
-
-      @if (listaReunioes() === null) {
-        <p>Carregando...</p>
-      } @else if (listaReunioes()?.length === 0) {
-        <p>Nenhuma reuniao.</p>
-      } @else {
-        <div class="grupo-detalhe-table">
-          <table cellspacing="0" cellpadding="6" style="width:100%">
-            <thead>
-              <tr>
-                <th>Data/Hora</th>
-                <th>Pauta</th>
-                <th>Observacoes</th>
-                <th>Criado por</th>
-                @if (canSchedule()) { <th>Acoes</th> }
+                  </td>
+                }
               </tr>
-            </thead>
-            <tbody>
-              @for (r of listaReunioes(); track r.id) {
-                <tr>
-                  @if (editandoReuniaoId() === r.id) {
-                    <td><input type="datetime-local" [(ngModel)]="editarDataHora" /></td>
-                    <td><input type="text" [(ngModel)]="editarPauta" /></td>
-                    <td><input type="text" [(ngModel)]="editarObservacoes" /></td>
-                  } @else {
-                    <td>{{ r.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
-                    <td>{{ r.pauta }}</td>
-                    <td>{{ r.observacoes }}</td>
-                  }
-                  <td>{{ r.criadoPor }}</td>
-                  @if (canSchedule()) {
-                    <td>
-                      @if (editandoReuniaoId() === r.id) {
-                        <div class="inline-actions">
-                          <button type="button" (click)="salvarEdicaoReuniao()">Salvar</button>
-                          <button type="button" class="ghost-small" (click)="cancelarEdicaoReuniao()">Cancelar</button>
-                        </div>
-                      } @else {
-                        <div class="inline-actions">
-                          <button type="button" class="ghost-small" (click)="iniciarEdicaoReuniao(r)">Editar</button>
-                          <button type="button" class="ghost-small danger" (click)="excluirReuniao(r)">Excluir</button>
-                        </div>
-                      }
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+            }
+          </tbody>
+        </table>
       }
     </div>
+  </section>
 
-    <div class="grupo-membros-card">
-      <h3>Membros do grupo</h3>
+  <div class="bottom-grid">
+    <section class="card-block">
+      <div class="block-header">
+        <h3>Membros do grupo</h3>
+      </div>
       @if (membrosGrupo() === null) {
-        <p>Carregando membros...</p>
+        <p class="state-info">Carregando membros...</p>
       } @else if (membrosGrupo()?.length === 0) {
-        <p>Nenhum membro adicionado.</p>
+        <p class="state-info">Nenhum membro adicionado.</p>
       } @else {
         <ul class="lista-membros">
           @for (m of membrosGrupo(); track m.id) {
             <li>
-              <strong>{{ m.nome }}</strong>
-              <span>{{ m.email }}</span>
+              <div>
+                <strong>{{ m.nome }}</strong>
+                <span>{{ m.email }}</span>
+              </div>
               @if (isAdmin()) {
                 <button type="button"
                         class="ghost-small danger"
@@ -216,12 +236,15 @@
           }
         </ul>
       }
-    </div>
+    </section>
 
     @if (isAdmin()) {
-      <div class="grupo-admin-membros-card">
-        <h3>Admin - Adicionar membros</h3>
-        <select multiple size="8" style="width:100%" (change)="onMembrosChange($event)">
+      <section class="card-block">
+        <div class="block-header">
+          <h3>Admin - Adicionar membros</h3>
+          <p class="block-subtitle">Selecione um ou mais alunos para incluir no grupo.</p>
+        </div>
+        <select class="membros-select" multiple size="8" (change)="onMembrosChange($event)">
           @if (alunosDisponiveis().length === 0) {
             <option disabled>Todos os alunos ja fazem parte do grupo.</option>
           } @else {
@@ -233,7 +256,7 @@
         <div class="admin-membros-acoes">
           <button (click)="adicionarMembros()" [disabled]="membrosSelecionados().length === 0">Adicionar</button>
         </div>
-      </div>
+      </section>
     }
   </div>
-</div>
+</section>
