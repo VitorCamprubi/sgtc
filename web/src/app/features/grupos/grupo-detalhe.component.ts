@@ -7,7 +7,7 @@ import { faComments, faDownload, faTrashCan } from '@fortawesome/free-solid-svg-
 import { Comentario, ComentariosService } from '../../services/comentarios.service';
 import { DocumentoVersao, DocumentosService } from '../../services/documentos.service';
 import { GrupoMembroDTO, GrupoService } from '../../services/grupo.service';
-import { Reuniao, ReunioesService } from '../../services/reunioes.service';
+import { Reuniao, ReuniaoStatus, ReunioesService } from '../../services/reunioes.service';
 import { Usuario, UsuariosService } from '../../services/usuarios.service';
 
 @Component({
@@ -54,6 +54,8 @@ export class GrupoDetalheComponent implements OnInit {
   editarDataHora = '';
   editarPauta = '';
   editarObservacoes = '';
+  concluindoReuniaoId = signal<number | null>(null);
+  relatorioConclusao = '';
 
   isAdmin = signal<boolean>(false);
   alunos = signal<Usuario[]>([]);
@@ -71,7 +73,20 @@ export class GrupoDetalheComponent implements OnInit {
     return role === 'ADMIN' || role === 'PROFESSOR';
   });
 
-  canSchedule = this.canComment;
+  canCreateReuniao = computed(() => this.currentUser() !== null);
+
+  canManageReunioes = computed(() => {
+    const role = this.currentUser()?.role;
+    return role === 'ADMIN' || role === 'PROFESSOR';
+  });
+
+  reunioesAbertas = computed(() =>
+    (this.listaReunioes() ?? []).filter((r) => this.isReuniaoAberta(r))
+  );
+
+  historicoReunioes = computed(() =>
+    (this.listaReunioes() ?? []).filter((r) => !this.isReuniaoAberta(r))
+  );
 
   ngOnInit() {
     this.grupoId = Number(this.route.snapshot.paramMap.get('id'));
@@ -275,6 +290,9 @@ export class GrupoDetalheComponent implements OnInit {
 
   recarregarReunioes() {
     this.listaReunioes.set(null);
+    this.cancelarEdicaoReuniao();
+    this.cancelarConclusaoReuniao();
+
     this.reunioes.listar(this.grupoId).subscribe({
       next: (r) => this.listaReunioes.set(r),
       error: (e) => this.error.set(`${e.status} ${e.statusText}`),
@@ -290,7 +308,7 @@ export class GrupoDetalheComponent implements OnInit {
   }
 
   agendarReuniao() {
-    if (!this.canSchedule()) return;
+    if (!this.canCreateReuniao()) return;
 
     const dataHora = this.novaDataHora;
     const pauta = this.novaPauta.trim();
@@ -313,11 +331,12 @@ export class GrupoDetalheComponent implements OnInit {
   }
 
   iniciarEdicaoReuniao(r: Reuniao) {
-    if (!this.canSchedule()) return;
+    if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
     this.editandoReuniaoId.set(r.id);
     this.editarDataHora = this.toDateTimeLocalValue(r.dataHora);
     this.editarPauta = r.pauta;
     this.editarObservacoes = r.observacoes ?? '';
+    this.cancelarConclusaoReuniao();
   }
 
   cancelarEdicaoReuniao() {
@@ -329,7 +348,7 @@ export class GrupoDetalheComponent implements OnInit {
 
   salvarEdicaoReuniao() {
     const reuniaoId = this.editandoReuniaoId();
-    if (!this.canSchedule() || !reuniaoId) return;
+    if (!this.canManageReunioes() || !reuniaoId) return;
 
     const dataHora = this.editarDataHora;
     const pauta = this.editarPauta.trim();
@@ -349,13 +368,44 @@ export class GrupoDetalheComponent implements OnInit {
     });
   }
 
-  excluirReuniao(r: Reuniao) {
-    if (!this.canSchedule()) return;
-    if (!confirm(`Excluir reuniao "${r.pauta}"?`)) return;
+  iniciarConclusaoReuniao(r: Reuniao) {
+    if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
+    this.concluindoReuniaoId.set(r.id);
+    this.relatorioConclusao = '';
+    this.cancelarEdicaoReuniao();
+  }
 
-    this.reunioes.excluir(r.id).subscribe({
+  cancelarConclusaoReuniao() {
+    this.concluindoReuniaoId.set(null);
+    this.relatorioConclusao = '';
+  }
+
+  concluirReuniao(r: Reuniao) {
+    if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
+
+    const relatorio = this.relatorioConclusao.trim();
+    if (!relatorio) {
+      this.error.set('Relatorio eh obrigatorio para concluir a reuniao.');
+      return;
+    }
+
+    this.reunioes.concluir(r.id, { relatorio }).subscribe({
+      next: () => {
+        this.cancelarConclusaoReuniao();
+        this.recarregarReunioes();
+      },
+      error: (e) => this.error.set(`${e.status} ${e.statusText}`),
+    });
+  }
+
+  cancelarReuniao(r: Reuniao) {
+    if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
+    if (!confirm(`Cancelar reuniao "${r.pauta}"?`)) return;
+
+    this.reunioes.cancelar(r.id).subscribe({
       next: () => {
         if (this.editandoReuniaoId() === r.id) this.cancelarEdicaoReuniao();
+        if (this.concluindoReuniaoId() === r.id) this.cancelarConclusaoReuniao();
         this.recarregarReunioes();
       },
       error: (e) => this.error.set(`${e.status} ${e.statusText}`),
@@ -406,6 +456,40 @@ export class GrupoDetalheComponent implements OnInit {
     this.recarregar();
     this.recarregarReunioes();
     this.recarregarMembros();
+  }
+
+  isReuniaoAberta(r: Reuniao): boolean {
+    return r.status === 'AGUARDANDO_DATA_REUNIAO';
+  }
+
+  statusReuniaoLabel(status: ReuniaoStatus): string {
+    switch (status) {
+      case 'AGUARDANDO_DATA_REUNIAO':
+        return 'Aguardando data da reuniao';
+      case 'CONCLUIDA':
+        return 'Concluida';
+      case 'CANCELADA':
+        return 'Cancelada';
+      case 'NAO_REALIZADA':
+        return 'Nao realizada';
+      default:
+        return status;
+    }
+  }
+
+  statusReuniaoClass(status: ReuniaoStatus): string {
+    switch (status) {
+      case 'AGUARDANDO_DATA_REUNIAO':
+        return 'badge-status aberto';
+      case 'CONCLUIDA':
+        return 'badge-status concluida';
+      case 'CANCELADA':
+        return 'badge-status cancelada';
+      case 'NAO_REALIZADA':
+        return 'badge-status nao-realizada';
+      default:
+        return 'badge-status';
+    }
   }
 
   private toDateTimeLocalValue(dataHora: string): string {

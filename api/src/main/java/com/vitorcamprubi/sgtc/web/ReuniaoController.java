@@ -34,6 +34,9 @@ public class ReuniaoController {
                                         String observacoes) {
     }
 
+    public record ConcluirReuniaoRequest(@NotBlank String relatorio) {
+    }
+
     @PostMapping("/grupos/{grupoId}/reunioes")
     public ReuniaoDTO agendar(@PathVariable Long grupoId, @RequestBody @Valid AgendarReuniaoRequest req) {
         var r = service.agendar(grupoId, req.dataHora(), req.pauta(), req.observacoes(), auth.getCurrentUser());
@@ -42,7 +45,19 @@ public class ReuniaoController {
 
     @PutMapping("/reunioes/{reuniaoId}")
     public ReuniaoDTO atualizar(@PathVariable Long reuniaoId, @RequestBody @Valid AgendarReuniaoRequest req) {
-        var r = service.atualizar(reuniaoId, req.dataHora(), req.pauta(), req.observacoes(), auth.getCurrentUser());
+        var r = service.remarcar(reuniaoId, req.dataHora(), req.pauta(), req.observacoes(), auth.getCurrentUser());
+        return ReuniaoDTO.of(r);
+    }
+
+    @PostMapping("/reunioes/{reuniaoId}/concluir")
+    public ReuniaoDTO concluir(@PathVariable Long reuniaoId, @RequestBody @Valid ConcluirReuniaoRequest req) {
+        var r = service.concluir(reuniaoId, req.relatorio(), auth.getCurrentUser());
+        return ReuniaoDTO.of(r);
+    }
+
+    @PostMapping("/reunioes/{reuniaoId}/cancelar")
+    public ReuniaoDTO cancelar(@PathVariable Long reuniaoId) {
+        var r = service.cancelar(reuniaoId, auth.getCurrentUser());
         return ReuniaoDTO.of(r);
     }
 

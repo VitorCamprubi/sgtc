@@ -81,6 +81,18 @@
   background: var(--sgtc-surface);
 }
 
+.historico-shell {
+  margin-top: 1rem;
+}
+
+.table-title {
+  margin: 0;
+  padding: 0.8rem 0.85rem 0;
+  color: var(--sgtc-text-strong);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -208,6 +220,41 @@
   margin-top: 0.5rem;
 }
 
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.badge-status.aberto {
+  color: #0f4f8f;
+  background: rgba(23, 111, 201, 0.12);
+  border-color: rgba(23, 111, 201, 0.3);
+}
+
+.badge-status.concluida {
+  color: #1b7c3f;
+  background: rgba(40, 167, 69, 0.14);
+  border-color: rgba(40, 167, 69, 0.34);
+}
+
+.badge-status.cancelada {
+  color: #a74911;
+  background: rgba(217, 119, 6, 0.15);
+  border-color: rgba(217, 119, 6, 0.34);
+}
+
+.badge-status.nao-realizada {
+  color: #9e1c28;
+  background: rgba(191, 58, 73, 0.14);
+  border-color: rgba(191, 58, 73, 0.34);
+}
+
 .inline-edit {
   display: flex;
   gap: 0.4rem;
@@ -223,6 +270,30 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 0.6rem;
   align-items: center;
+}
+
+.row-expand td {
+  background: #f8fafc;
+}
+
+.conclusao-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem 0;
+}
+
+.conclusao-box label {
+  font-size: 0.78rem;
+  color: var(--sgtc-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.conclusao-box textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 .bottom-grid {

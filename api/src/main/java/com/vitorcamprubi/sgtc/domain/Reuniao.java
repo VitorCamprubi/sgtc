@@ -21,6 +21,17 @@ public class Reuniao {
     @Column
     private String observacoes;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private ReuniaoStatus status;
+
+    @Lob
+    @Column
+    private String relatorio;
+
+    @Column(name="encerrada_em")
+    private LocalDateTime encerradaEm;
+
     @ManyToOne(optional=false) @JoinColumn(name="criado_por")
     private User criadoPor;
 
@@ -36,6 +47,12 @@ public class Reuniao {
     public void setPauta(String pauta) { this.pauta = pauta; }
     public String getObservacoes() { return observacoes; }
     public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
+    public ReuniaoStatus getStatus() { return status; }
+    public void setStatus(ReuniaoStatus status) { this.status = status; }
+    public String getRelatorio() { return relatorio; }
+    public void setRelatorio(String relatorio) { this.relatorio = relatorio; }
+    public LocalDateTime getEncerradaEm() { return encerradaEm; }
+    public void setEncerradaEm(LocalDateTime encerradaEm) { this.encerradaEm = encerradaEm; }
     public User getCriadoPor() { return criadoPor; }
     public void setCriadoPor(User criadoPor) { this.criadoPor = criadoPor; }
     public LocalDateTime getCreatedAt() { return createdAt; }

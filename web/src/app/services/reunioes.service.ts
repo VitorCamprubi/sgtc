@@ -1,11 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
+export type ReuniaoStatus =
+  | 'AGUARDANDO_DATA_REUNIAO'
+  | 'CONCLUIDA'
+  | 'CANCELADA'
+  | 'NAO_REALIZADA';
+
 export type Reuniao = {
   id: number;
   dataHora: string;
   pauta: string;
   observacoes: string | null;
+  status: ReuniaoStatus;
+  relatorio: string | null;
+  encerradaEm: string | null;
   criadoPor: string;
 };
 
@@ -31,8 +40,12 @@ export class ReunioesService {
     return this.http.put<Reuniao>(`/api/reunioes/${reuniaoId}`, req);
   }
 
-  excluir(reuniaoId: number) {
-    return this.http.delete<void>(`/api/reunioes/${reuniaoId}`);
+  concluir(reuniaoId: number, req: { relatorio: string }) {
+    return this.http.post<Reuniao>(`/api/reunioes/${reuniaoId}/concluir`, req);
+  }
+
+  cancelar(reuniaoId: number) {
+    return this.http.post<Reuniao>(`/api/reunioes/${reuniaoId}/cancelar`, {});
   }
 }
 

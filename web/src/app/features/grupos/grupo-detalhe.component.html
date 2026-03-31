@@ -146,7 +146,7 @@
       <p class="block-subtitle">Acompanhe a agenda e historico de reunioes do grupo.</p>
     </div>
 
-    @if (canSchedule()) {
+    @if (canCreateReuniao()) {
       <div class="form-reuniao">
         <input type="datetime-local" [(ngModel)]="novaDataHora" />
         <input placeholder="Pauta" [(ngModel)]="novaPauta" />
@@ -161,44 +161,112 @@
       } @else if (listaReunioes()?.length === 0) {
         <p class="state-info pad">Nenhuma reuniao.</p>
       } @else {
+        <p class="table-title">Agenda aberta</p>
+        @if (reunioesAbertas().length === 0) {
+          <p class="state-info pad">Nenhuma reuniao em aberto.</p>
+        } @else {
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Pauta</th>
+                <th>Observacoes</th>
+                <th>Status</th>
+                <th>Criado por</th>
+                @if (canManageReunioes()) { <th>Acoes</th> }
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of reunioesAbertas(); track r.id) {
+                <tr>
+                  @if (editandoReuniaoId() === r.id) {
+                    <td><input type="datetime-local" [(ngModel)]="editarDataHora" /></td>
+                    <td><input type="text" [(ngModel)]="editarPauta" /></td>
+                    <td><input type="text" [(ngModel)]="editarObservacoes" /></td>
+                  } @else {
+                    <td>{{ r.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ r.pauta }}</td>
+                    <td>{{ r.observacoes || '-' }}</td>
+                  }
+                  <td><span [class]="statusReuniaoClass(r.status)">{{ statusReuniaoLabel(r.status) }}</span></td>
+                  <td>{{ r.criadoPor }}</td>
+                  @if (canManageReunioes()) {
+                    <td>
+                      @if (editandoReuniaoId() === r.id) {
+                        <div class="inline-actions">
+                          <button type="button" (click)="salvarEdicaoReuniao()">Salvar</button>
+                          <button type="button" class="ghost-small" (click)="cancelarEdicaoReuniao()">Cancelar</button>
+                        </div>
+                      } @else if (concluindoReuniaoId() === r.id) {
+                        <div class="inline-actions">
+                          <button type="button" class="ghost-small" (click)="cancelarConclusaoReuniao()">Cancelar conclusao</button>
+                          <button type="button" class="ghost-small danger" (click)="cancelarReuniao(r)">Cancelar reuniao</button>
+                        </div>
+                      } @else {
+                        <div class="inline-actions">
+                          <button type="button" class="ghost-small" (click)="iniciarEdicaoReuniao(r)">Remarcar</button>
+                          <button type="button" class="ghost-small" (click)="iniciarConclusaoReuniao(r)">Concluir</button>
+                          <button type="button" class="ghost-small danger" (click)="cancelarReuniao(r)">Cancelar</button>
+                        </div>
+                      }
+                    </td>
+                  }
+                </tr>
+                @if (concluindoReuniaoId() === r.id) {
+                  <tr class="row-expand">
+                    <td [attr.colspan]="canManageReunioes() ? 6 : 5">
+                      <div class="conclusao-box">
+                        <label for="relatorio-reuniao-{{ r.id }}">Relatorio da reuniao (obrigatorio)</label>
+                        <textarea id="relatorio-reuniao-{{ r.id }}"
+                                  rows="4"
+                                  placeholder="Descreva decisoes, encaminhamentos e pendencias."
+                                  [(ngModel)]="relatorioConclusao"></textarea>
+                        <div class="inline-actions">
+                          <button type="button" (click)="concluirReuniao(r)" [disabled]="!relatorioConclusao.trim()">Confirmar conclusao</button>
+                          <button type="button" class="ghost-small" (click)="cancelarConclusaoReuniao()">Cancelar</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        }
+      }
+    </div>
+
+    <div class="table-shell historico-shell">
+      @if (listaReunioes() !== null) {
+        <p class="table-title">Historico de reunioes fechadas</p>
+      }
+      @if (listaReunioes() === null) {
+        <p class="state-info pad">Carregando...</p>
+      } @else if (historicoReunioes().length === 0) {
+        <p class="state-info pad">Nenhuma reuniao no historico.</p>
+      } @else {
         <table class="data-table">
           <thead>
             <tr>
               <th>Data/Hora</th>
               <th>Pauta</th>
+              <th>Status</th>
+              <th>Relatorio</th>
               <th>Observacoes</th>
               <th>Criado por</th>
-              @if (canSchedule()) { <th>Acoes</th> }
+              <th>Encerrada em</th>
             </tr>
           </thead>
           <tbody>
-            @for (r of listaReunioes(); track r.id) {
+            @for (r of historicoReunioes(); track r.id) {
               <tr>
-                @if (editandoReuniaoId() === r.id) {
-                  <td><input type="datetime-local" [(ngModel)]="editarDataHora" /></td>
-                  <td><input type="text" [(ngModel)]="editarPauta" /></td>
-                  <td><input type="text" [(ngModel)]="editarObservacoes" /></td>
-                } @else {
-                  <td>{{ r.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
-                  <td>{{ r.pauta }}</td>
-                  <td>{{ r.observacoes }}</td>
-                }
+                <td>{{ r.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ r.pauta }}</td>
+                <td><span [class]="statusReuniaoClass(r.status)">{{ statusReuniaoLabel(r.status) }}</span></td>
+                <td>{{ r.relatorio || '-' }}</td>
+                <td>{{ r.observacoes || '-' }}</td>
                 <td>{{ r.criadoPor }}</td>
-                @if (canSchedule()) {
-                  <td>
-                    @if (editandoReuniaoId() === r.id) {
-                      <div class="inline-actions">
-                        <button type="button" (click)="salvarEdicaoReuniao()">Salvar</button>
-                        <button type="button" class="ghost-small" (click)="cancelarEdicaoReuniao()">Cancelar</button>
-                      </div>
-                    } @else {
-                      <div class="inline-actions">
-                        <button type="button" class="ghost-small" (click)="iniciarEdicaoReuniao(r)">Editar</button>
-                        <button type="button" class="ghost-small danger" (click)="excluirReuniao(r)">Excluir</button>
-                      </div>
-                    }
-                  </td>
-                }
+                <td>{{ r.encerradaEm ? (r.encerradaEm | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
               </tr>
             }
           </tbody>
