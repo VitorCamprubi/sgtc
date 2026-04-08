@@ -37,6 +37,11 @@ public class GrupoController {
         return service.listarDoUsuario(auth.getCurrentUser());
     }
 
+    @GetMapping("/{id}")
+    public GrupoResumoDTO obterPorId(@PathVariable Long id) {
+        return service.obterResumo(id, auth.getCurrentUser());
+    }
+
     @PostMapping("/{id}/membros")
     @PreAuthorize("hasRole('ADMIN')")
     public void adicionarMembros(@PathVariable Long id, @RequestBody @Valid AddMembrosRequest req) {

@@ -26,6 +26,29 @@
   color: var(--sgtc-muted);
 }
 
+.group-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.group-tabs a {
+  text-decoration: none;
+  color: var(--sgtc-primary);
+  border: 1px solid var(--sgtc-border);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  background: #fff;
+}
+
+.group-tabs a.active {
+  color: #fff;
+  border-color: var(--sgtc-primary);
+  background: var(--sgtc-primary);
+}
+
 .error-banner {
   margin: 0;
   padding: 0.75rem 1rem;
@@ -294,6 +317,12 @@
 .conclusao-box textarea {
   resize: vertical;
   min-height: 100px;
+}
+
+.conclusao-box input,
+.conclusao-box select,
+.conclusao-box textarea {
+  width: 100%;
 }
 
 .bottom-grid {

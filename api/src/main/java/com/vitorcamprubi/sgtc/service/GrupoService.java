@@ -49,6 +49,7 @@ public class GrupoService {
     @Transactional
     public GrupoResumoDTO criar(GrupoCreateRequest req) {
         Grupo g = new Grupo();
+        g.setId(proximoIdDisponivel());
         preencherDadosGrupo(g, req);
         g = grupos.save(g);
         return toResumo(g);
@@ -115,6 +116,11 @@ public class GrupoService {
             lista = grupos.findByAlunoId(atual.getId());
         }
         return lista.stream().map(this::toResumo).toList();
+    }
+
+    public GrupoResumoDTO obterResumo(Long grupoId, User atual) {
+        Grupo grupo = perms.assertPodeAcessarGrupo(grupoId, atual);
+        return toResumo(grupo);
     }
 
     public List<UserAdminDTO> listarMembros(Long grupoId, User atual) {
@@ -214,5 +220,22 @@ public class GrupoService {
                 g.getCoorientador() != null ? g.getCoorientador().getNome() : null,
                 count
         );
+    }
+
+    private long proximoIdDisponivel() {
+        List<Long> ids = grupos.findAllIdsOrderByIdAsc();
+        long esperado = 1L;
+        for (Long id : ids) {
+            if (id == null) {
+                continue;
+            }
+            if (id > esperado) {
+                break;
+            }
+            if (id.equals(esperado)) {
+                esperado++;
+            }
+        }
+        return esperado;
     }
 }

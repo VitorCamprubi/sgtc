@@ -34,6 +34,10 @@ export class GrupoService {
     return this.http.get<GrupoResumoDTO[]>('/api/grupos/me');
   }
 
+  obter(id: number): Observable<GrupoResumoDTO> {
+    return this.http.get<GrupoResumoDTO>(`/api/grupos/${id}`);
+  }
+
   criar(req: GrupoCreateRequest): Observable<GrupoResumoDTO> {
     return this.http.post<GrupoResumoDTO>('/api/grupos', req);
   }

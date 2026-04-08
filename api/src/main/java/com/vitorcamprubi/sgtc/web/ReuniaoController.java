@@ -1,20 +1,28 @@
 package com.vitorcamprubi.sgtc.web;
 
+import com.vitorcamprubi.sgtc.domain.ReuniaoDesempenhoGrupo;
 import com.vitorcamprubi.sgtc.security.AuthService;
+import com.vitorcamprubi.sgtc.service.ReuniaoPdfService;
 import com.vitorcamprubi.sgtc.service.ReuniaoService;
 import com.vitorcamprubi.sgtc.web.dto.ReuniaoDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,10 +30,12 @@ import java.util.List;
 @RequestMapping("/api")
 public class ReuniaoController {
     private final ReuniaoService service;
+    private final ReuniaoPdfService pdfService;
     private final AuthService auth;
 
-    public ReuniaoController(ReuniaoService s, AuthService a) {
+    public ReuniaoController(ReuniaoService s, ReuniaoPdfService pdfService, AuthService a) {
         this.service = s;
+        this.pdfService = pdfService;
         this.auth = a;
     }
 
@@ -34,7 +44,15 @@ public class ReuniaoController {
                                         String observacoes) {
     }
 
-    public record ConcluirReuniaoRequest(@NotBlank String relatorio) {
+    public record ConcluirReuniaoRequest(
+            @NotNull @Min(1) @Max(6) Integer numeroEncontro,
+            @NotNull LocalDate dataAtividadesRealizadas,
+            @NotBlank String atividadesRealizadas,
+            @NotNull ReuniaoDesempenhoGrupo desempenhoGrupo,
+            @NotBlank String professorDisciplina,
+            @NotBlank String orientadorAssinatura,
+            @NotBlank String coorientadorAssinatura
+    ) {
     }
 
     @PostMapping("/grupos/{grupoId}/reunioes")
@@ -51,7 +69,16 @@ public class ReuniaoController {
 
     @PostMapping("/reunioes/{reuniaoId}/concluir")
     public ReuniaoDTO concluir(@PathVariable Long reuniaoId, @RequestBody @Valid ConcluirReuniaoRequest req) {
-        var r = service.concluir(reuniaoId, req.relatorio(), auth.getCurrentUser());
+        var dados = new ReuniaoService.ExecucaoReuniaoDados(
+                req.numeroEncontro(),
+                req.dataAtividadesRealizadas(),
+                req.atividadesRealizadas(),
+                req.desempenhoGrupo(),
+                req.professorDisciplina(),
+                req.orientadorAssinatura(),
+                req.coorientadorAssinatura()
+        );
+        var r = service.concluir(reuniaoId, dados, auth.getCurrentUser());
         return ReuniaoDTO.of(r);
     }
 
@@ -69,5 +96,15 @@ public class ReuniaoController {
     @GetMapping("/grupos/{grupoId}/reunioes")
     public List<ReuniaoDTO> listar(@PathVariable Long grupoId) {
         return service.listar(grupoId, auth.getCurrentUser()).stream().map(ReuniaoDTO::of).toList();
+    }
+
+    @GetMapping("/grupos/{grupoId}/reunioes/pdf")
+    public ResponseEntity<byte[]> gerarPdf(@PathVariable Long grupoId) {
+        byte[] pdf = pdfService.gerarPdfExecutadasDoGrupo(grupoId, auth.getCurrentUser());
+        String nomeArquivo = "reunioes-grupo-" + grupoId + ".pdf";
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomeArquivo + "\"")
+                .body(pdf);
     }
 }

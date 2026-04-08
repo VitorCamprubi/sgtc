@@ -9,6 +9,9 @@ import java.util.List;
 public interface GrupoRepository extends JpaRepository<Grupo, Long> {
     List<Grupo> findByOrientadorIdOrCoorientadorId(Long orientadorId, Long coorientadorId);
 
+    @Query("select g.id from Grupo g order by g.id asc")
+    List<Long> findAllIdsOrderByIdAsc();
+
     @Query("select ga.grupo from GrupoAluno ga where ga.aluno.id = :alunoId")
     List<Grupo> findByAlunoId(@Param("alunoId") Long alunoId);
 

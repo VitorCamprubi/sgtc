@@ -1,6 +1,7 @@
 package com.vitorcamprubi.sgtc.service;
 
 import com.vitorcamprubi.sgtc.domain.Reuniao;
+import com.vitorcamprubi.sgtc.domain.ReuniaoDesempenhoGrupo;
 import com.vitorcamprubi.sgtc.domain.ReuniaoStatus;
 import com.vitorcamprubi.sgtc.domain.User;
 import com.vitorcamprubi.sgtc.repo.ReuniaoRepository;
@@ -10,11 +11,23 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class ReuniaoService {
+    public record ExecucaoReuniaoDados(
+            Integer numeroEncontro,
+            LocalDate dataAtividadesRealizadas,
+            String atividadesRealizadas,
+            ReuniaoDesempenhoGrupo desempenhoGrupo,
+            String professorDisciplina,
+            String orientadorAssinatura,
+            String coorientadorAssinatura
+    ) {
+    }
+
     private final ReuniaoRepository repo;
     private final PermissaoService perms;
 
@@ -41,8 +54,7 @@ public class ReuniaoService {
         r.setPauta(pauta.trim());
         r.setObservacoes(observacoes == null || observacoes.isBlank() ? null : observacoes.trim());
         r.setStatus(ReuniaoStatus.AGUARDANDO_DATA_REUNIAO);
-        r.setRelatorio(null);
-        r.setEncerradaEm(null);
+        limparDadosExecucao(r);
         r.setCriadoPor(atual);
         return repo.save(r);
     }
@@ -86,18 +98,29 @@ public class ReuniaoService {
     }
 
     @Transactional
-    public Reuniao concluir(Long reuniaoId, String relatorio, User atual) {
-        if (relatorio == null || relatorio.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Relatorio eh obrigatorio para concluir");
-        }
-
+    public Reuniao concluir(Long reuniaoId, ExecucaoReuniaoDados dados, User atual) {
         Reuniao r = carregar(reuniaoId);
         atualizarStatusNaoRealizadaSeAtrasada(r, LocalDateTime.now());
         perms.assertOrientadorOuCoorientadorDoGrupo(r.getGrupo().getId(), atual);
         assertAberta(r);
+        validarDadosExecucao(dados);
+
+        if (repo.existsByGrupoIdAndStatusAndNumeroEncontro(
+                r.getGrupo().getId(),
+                ReuniaoStatus.CONCLUIDA,
+                dados.numeroEncontro())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe reuniao executada para este encontro");
+        }
 
         r.setStatus(ReuniaoStatus.CONCLUIDA);
-        r.setRelatorio(relatorio.trim());
+        r.setNumeroEncontro(dados.numeroEncontro());
+        r.setDataAtividadesRealizadas(dados.dataAtividadesRealizadas());
+        r.setAtividadesRealizadas(dados.atividadesRealizadas().trim());
+        r.setDesempenhoGrupo(dados.desempenhoGrupo());
+        r.setProfessorDisciplina(dados.professorDisciplina().trim());
+        r.setOrientadorAssinatura(dados.orientadorAssinatura().trim());
+        r.setCoorientadorAssinatura(dados.coorientadorAssinatura().trim());
+        r.setRelatorio(dados.atividadesRealizadas().trim());
         r.setEncerradaEm(LocalDateTime.now());
         return repo.save(r);
     }
@@ -110,9 +133,15 @@ public class ReuniaoService {
         assertAberta(r);
 
         r.setStatus(ReuniaoStatus.CANCELADA);
+        limparDadosExecucao(r);
         r.setEncerradaEm(LocalDateTime.now());
-        r.setRelatorio(null);
         return repo.save(r);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Reuniao> listarExecutadasParaPdf(Long grupoId, User atual) {
+        perms.assertPodeAcessarGrupo(grupoId, atual);
+        return repo.findByGrupoIdAndStatusOrderByNumeroEncontroAscEncerradaEmAsc(grupoId, ReuniaoStatus.CONCLUIDA);
     }
 
     @Transactional
@@ -173,8 +202,8 @@ public class ReuniaoService {
             return false;
         }
         reuniao.setStatus(ReuniaoStatus.NAO_REALIZADA);
+        limparDadosExecucao(reuniao);
         reuniao.setEncerradaEm(agora);
-        reuniao.setRelatorio(null);
         return true;
     }
 
@@ -191,6 +220,45 @@ public class ReuniaoService {
         }
         if (!paraSalvar.isEmpty()) {
             repo.saveAll(paraSalvar);
+        }
+    }
+
+    private void limparDadosExecucao(Reuniao reuniao) {
+        reuniao.setRelatorio(null);
+        reuniao.setNumeroEncontro(null);
+        reuniao.setDataAtividadesRealizadas(null);
+        reuniao.setAtividadesRealizadas(null);
+        reuniao.setDesempenhoGrupo(null);
+        reuniao.setProfessorDisciplina(null);
+        reuniao.setOrientadorAssinatura(null);
+        reuniao.setCoorientadorAssinatura(null);
+        reuniao.setEncerradaEm(null);
+    }
+
+    private void validarDadosExecucao(ExecucaoReuniaoDados dados) {
+        if (dados == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dados de execucao sao obrigatorios");
+        }
+        if (dados.numeroEncontro() == null || dados.numeroEncontro() < 1 || dados.numeroEncontro() > 6) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero do encontro deve estar entre 1 e 6");
+        }
+        if (dados.dataAtividadesRealizadas() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data das atividades eh obrigatoria");
+        }
+        if (dados.atividadesRealizadas() == null || dados.atividadesRealizadas().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Atividades realizadas sao obrigatorias");
+        }
+        if (dados.desempenhoGrupo() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Desempenho do grupo eh obrigatorio");
+        }
+        if (dados.professorDisciplina() == null || dados.professorDisciplina().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Professor da disciplina eh obrigatorio");
+        }
+        if (dados.orientadorAssinatura() == null || dados.orientadorAssinatura().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Orientador eh obrigatorio");
+        }
+        if (dados.coorientadorAssinatura() == null || dados.coorientadorAssinatura().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Coorientador eh obrigatorio");
         }
     }
 }

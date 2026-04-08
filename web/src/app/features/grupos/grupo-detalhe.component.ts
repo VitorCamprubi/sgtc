@@ -1,13 +1,19 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faComments, faDownload, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { Comentario, ComentariosService } from '../../services/comentarios.service';
 import { DocumentoVersao, DocumentosService } from '../../services/documentos.service';
 import { GrupoMembroDTO, GrupoService } from '../../services/grupo.service';
-import { Reuniao, ReuniaoStatus, ReunioesService } from '../../services/reunioes.service';
+import {
+  Reuniao,
+  ReuniaoDesempenhoGrupo,
+  ReuniaoStatus,
+  ReunioesService,
+} from '../../services/reunioes.service';
+import { GrupoResumoDTO } from '../../model/grupo-resumo.dto';
 import { Usuario, UsuariosService } from '../../services/usuarios.service';
 
 @Component({
@@ -15,7 +21,7 @@ import { Usuario, UsuariosService } from '../../services/usuarios.service';
   standalone: true,
   templateUrl: './grupo-detalhe.component.html',
   styleUrls: ['./grupo-detalhe.component.scss'],
-  imports: [CommonModule, FormsModule, FontAwesomeModule],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, RouterLink],
 })
 export class GrupoDetalheComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -30,6 +36,8 @@ export class GrupoDetalheComponent implements OnInit {
   faTrashCan = faTrashCan;
 
   grupoId = 0;
+  grupoTitulo = signal<string>('');
+  abaAtiva = signal<'documentos' | 'reunioes' | 'membros'>('documentos');
   lista = signal<DocumentoVersao[] | null>(null);
   error = signal<string | null>(null);
   baixando = signal<number | null>(null);
@@ -55,7 +63,14 @@ export class GrupoDetalheComponent implements OnInit {
   editarPauta = '';
   editarObservacoes = '';
   concluindoReuniaoId = signal<number | null>(null);
-  relatorioConclusao = '';
+  execucaoNumeroEncontro: number | null = null;
+  execucaoDataAtividades = '';
+  execucaoAtividadesRealizadas = '';
+  execucaoDesempenho: ReuniaoDesempenhoGrupo | '' = '';
+  execucaoProfessorDisciplina = '';
+  execucaoOrientadorAssinatura = '';
+  execucaoCoorientadorAssinatura = '';
+  gerandoPdf = signal<boolean>(false);
 
   isAdmin = signal<boolean>(false);
   alunos = signal<Usuario[]>([]);
@@ -89,15 +104,25 @@ export class GrupoDetalheComponent implements OnInit {
   );
 
   ngOnInit() {
-    this.grupoId = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isFinite(this.grupoId) || this.grupoId <= 0) {
-      this.error.set('Grupo invalido.');
-      return;
-    }
+    this.route.paramMap.subscribe((params) => {
+      const groupId = Number(params.get('id'));
+      if (!Number.isFinite(groupId) || groupId <= 0) {
+        this.error.set('Grupo invalido.');
+        return;
+      }
 
-    this.recarregar();
-    this.recarregarReunioes();
-    this.recarregarMembros();
+      this.abaAtiva.set(this.normalizarSecao(params.get('secao')));
+
+      const grupoMudou = this.grupoId !== groupId;
+      this.grupoId = groupId;
+      this.carregarResumoGrupo();
+
+      if (grupoMudou) {
+        this.recarregar();
+        this.recarregarReunioes();
+        this.recarregarMembros();
+      }
+    });
 
     this.usuarios.getUsuarioAtual().subscribe((u) => {
       this.currentUser.set(u);
@@ -109,6 +134,16 @@ export class GrupoDetalheComponent implements OnInit {
           error: (e) => this.error.set(`${e.status} ${e.statusText}`),
         });
       }
+    });
+  }
+
+  private carregarResumoGrupo() {
+    this.grupos.obter(this.grupoId).subscribe({
+      next: (g: GrupoResumoDTO) => this.grupoTitulo.set(g.titulo),
+      error: (e) => {
+        this.grupoTitulo.set('');
+        this.error.set(`${e.status} ${e.statusText}`);
+      },
     });
   }
 
@@ -371,25 +406,64 @@ export class GrupoDetalheComponent implements OnInit {
   iniciarConclusaoReuniao(r: Reuniao) {
     if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
     this.concluindoReuniaoId.set(r.id);
-    this.relatorioConclusao = '';
+    this.execucaoNumeroEncontro = this.proximoEncontroSugerido();
+    this.execucaoDataAtividades = this.toDateValue(r.dataHora);
+    this.execucaoAtividadesRealizadas = '';
+    this.execucaoDesempenho = '';
+    this.execucaoProfessorDisciplina = this.currentUser()?.nome ?? '';
+    this.execucaoOrientadorAssinatura = '';
+    this.execucaoCoorientadorAssinatura = '';
     this.cancelarEdicaoReuniao();
   }
 
   cancelarConclusaoReuniao() {
     this.concluindoReuniaoId.set(null);
-    this.relatorioConclusao = '';
+    this.execucaoNumeroEncontro = null;
+    this.execucaoDataAtividades = '';
+    this.execucaoAtividadesRealizadas = '';
+    this.execucaoDesempenho = '';
+    this.execucaoProfessorDisciplina = '';
+    this.execucaoOrientadorAssinatura = '';
+    this.execucaoCoorientadorAssinatura = '';
   }
 
   concluirReuniao(r: Reuniao) {
     if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
 
-    const relatorio = this.relatorioConclusao.trim();
-    if (!relatorio) {
-      this.error.set('Relatorio eh obrigatorio para concluir a reuniao.');
+    const numeroEncontro = this.execucaoNumeroEncontro;
+    const dataAtividadesRealizadas = this.execucaoDataAtividades;
+    const atividadesRealizadas = this.execucaoAtividadesRealizadas.trim();
+    const desempenhoGrupo = this.execucaoDesempenho;
+    const professorDisciplina = this.execucaoProfessorDisciplina.trim();
+    const orientadorAssinatura = this.execucaoOrientadorAssinatura.trim();
+    const coorientadorAssinatura = this.execucaoCoorientadorAssinatura.trim();
+
+    if (
+      !numeroEncontro ||
+      numeroEncontro < 1 ||
+      numeroEncontro > 6 ||
+      !dataAtividadesRealizadas ||
+      !atividadesRealizadas ||
+      !desempenhoGrupo ||
+      !professorDisciplina ||
+      !orientadorAssinatura ||
+      !coorientadorAssinatura
+    ) {
+      this.error.set('Preencha todos os campos da execucao da reuniao.');
       return;
     }
 
-    this.reunioes.concluir(r.id, { relatorio }).subscribe({
+    this.reunioes
+      .concluir(r.id, {
+        numeroEncontro,
+        dataAtividadesRealizadas,
+        atividadesRealizadas,
+        desempenhoGrupo,
+        professorDisciplina,
+        orientadorAssinatura,
+        coorientadorAssinatura,
+      })
+      .subscribe({
       next: () => {
         this.cancelarConclusaoReuniao();
         this.recarregarReunioes();
@@ -458,6 +532,36 @@ export class GrupoDetalheComponent implements OnInit {
     this.recarregarMembros();
   }
 
+  gerarPdfReunioes() {
+    if (this.gerandoPdf()) return;
+
+    this.gerandoPdf.set(true);
+    this.reunioes.gerarPdfDoGrupo(this.grupoId).subscribe({
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) {
+          this.error.set('Nao foi possivel gerar o PDF das reunioes.');
+          return;
+        }
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const fallbackNome = `reunioes-${this.normalizarNomeArquivo(
+          this.grupoTitulo() || `grupo-${this.grupoId}`
+        )}.pdf`;
+        a.download = this.filenameFromContentDisposition(
+          response.headers.get('content-disposition'),
+          fallbackNome
+        );
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (e) => this.error.set(`${e.status} ${e.statusText}`),
+      complete: () => this.gerandoPdf.set(false),
+    });
+  }
+
   isReuniaoAberta(r: Reuniao): boolean {
     return r.status === 'AGUARDANDO_DATA_REUNIAO';
   }
@@ -467,7 +571,7 @@ export class GrupoDetalheComponent implements OnInit {
       case 'AGUARDANDO_DATA_REUNIAO':
         return 'Aguardando data da reuniao';
       case 'CONCLUIDA':
-        return 'Concluida';
+        return 'Executada';
       case 'CANCELADA':
         return 'Cancelada';
       case 'NAO_REALIZADA':
@@ -492,7 +596,64 @@ export class GrupoDetalheComponent implements OnInit {
     }
   }
 
+  desempenhoLabel(desempenho: ReuniaoDesempenhoGrupo | null): string {
+    switch (desempenho) {
+      case 'RUIM':
+        return 'Ruim';
+      case 'REGULAR':
+        return 'Regular';
+      case 'BOM':
+        return 'Bom';
+      case 'OTIMO':
+        return 'Otimo';
+      default:
+        return '-';
+    }
+  }
+
   private toDateTimeLocalValue(dataHora: string): string {
     return dataHora.length >= 16 ? dataHora.slice(0, 16) : dataHora;
+  }
+
+  private toDateValue(dataHora: string): string {
+    return dataHora.length >= 10 ? dataHora.slice(0, 10) : '';
+  }
+
+  private proximoEncontroSugerido(): number {
+    const usados = new Set(
+      this.historicoReunioes()
+        .filter((r) => r.status === 'CONCLUIDA' && r.numeroEncontro)
+        .map((r) => r.numeroEncontro as number)
+    );
+
+    for (let i = 1; i <= 6; i += 1) {
+      if (!usados.has(i)) return i;
+    }
+    return 6;
+  }
+
+  private filenameFromContentDisposition(
+    contentDisposition: string | null,
+    fallback: string
+  ): string {
+    if (!contentDisposition) return fallback;
+    const match = /filename=\"?([^\";]+)\"?/i.exec(contentDisposition);
+    return match?.[1] ?? fallback;
+  }
+
+  private normalizarNomeArquivo(valor: string): string {
+    return valor
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  private normalizarSecao(
+    secao: string | null
+  ): 'documentos' | 'reunioes' | 'membros' {
+    if (secao === 'reunioes') return 'reunioes';
+    if (secao === 'membros') return 'membros';
+    return 'documentos';
   }
 }

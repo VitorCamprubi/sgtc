@@ -1,12 +1,14 @@
 package com.vitorcamprubi.sgtc.domain;
 
 import jakarta.persistence.*;
+import org.springframework.data.domain.Persistable;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "grupos")
-public class Grupo {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class Grupo implements Persistable<Long> {
+    @Id
     private Long id;
 
     @Column(nullable=false)
@@ -25,7 +27,11 @@ public class Grupo {
     @Column(nullable=false, updatable=false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Transient
+    private boolean novo = true;
+
     // getters/setters
+    @Override
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTitulo() { return titulo; }
@@ -38,4 +44,15 @@ public class Grupo {
     public void setMateria(Materia materia) { this.materia = materia; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    @Override
+    public boolean isNew() {
+        return novo;
+    }
+
+    @PostLoad
+    @PostPersist
+    private void markNotNew() {
+        this.novo = false;
+    }
 }

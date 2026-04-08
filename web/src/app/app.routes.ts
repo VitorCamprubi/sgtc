@@ -22,6 +22,11 @@ export const routes: Routes = [
     component: GruposComponent,
   },
   {
+    path: 'grupos/:id/:secao',
+    canActivate: [authGuard],
+    component: GrupoDetalheComponent,
+  },
+  {
     path: 'grupos/:id',
     canActivate: [authGuard],
     component: GrupoDetalheComponent,

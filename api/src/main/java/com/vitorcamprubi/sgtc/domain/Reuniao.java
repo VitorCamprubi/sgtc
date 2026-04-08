@@ -1,6 +1,7 @@
 package com.vitorcamprubi.sgtc.domain;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +33,29 @@ public class Reuniao {
     @Column(name="encerrada_em")
     private LocalDateTime encerradaEm;
 
+    @Column(name = "numero_encontro")
+    private Integer numeroEncontro;
+
+    @Column(name = "data_atividades_realizadas")
+    private LocalDate dataAtividadesRealizadas;
+
+    @Lob
+    @Column(name = "atividades_realizadas")
+    private String atividadesRealizadas;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "desempenho_grupo", length = 20)
+    private ReuniaoDesempenhoGrupo desempenhoGrupo;
+
+    @Column(name = "professor_disciplina")
+    private String professorDisciplina;
+
+    @Column(name = "orientador_assinatura")
+    private String orientadorAssinatura;
+
+    @Column(name = "coorientador_assinatura")
+    private String coorientadorAssinatura;
+
     @ManyToOne(optional=false) @JoinColumn(name="criado_por")
     private User criadoPor;
 
@@ -53,6 +77,20 @@ public class Reuniao {
     public void setRelatorio(String relatorio) { this.relatorio = relatorio; }
     public LocalDateTime getEncerradaEm() { return encerradaEm; }
     public void setEncerradaEm(LocalDateTime encerradaEm) { this.encerradaEm = encerradaEm; }
+    public Integer getNumeroEncontro() { return numeroEncontro; }
+    public void setNumeroEncontro(Integer numeroEncontro) { this.numeroEncontro = numeroEncontro; }
+    public LocalDate getDataAtividadesRealizadas() { return dataAtividadesRealizadas; }
+    public void setDataAtividadesRealizadas(LocalDate dataAtividadesRealizadas) { this.dataAtividadesRealizadas = dataAtividadesRealizadas; }
+    public String getAtividadesRealizadas() { return atividadesRealizadas; }
+    public void setAtividadesRealizadas(String atividadesRealizadas) { this.atividadesRealizadas = atividadesRealizadas; }
+    public ReuniaoDesempenhoGrupo getDesempenhoGrupo() { return desempenhoGrupo; }
+    public void setDesempenhoGrupo(ReuniaoDesempenhoGrupo desempenhoGrupo) { this.desempenhoGrupo = desempenhoGrupo; }
+    public String getProfessorDisciplina() { return professorDisciplina; }
+    public void setProfessorDisciplina(String professorDisciplina) { this.professorDisciplina = professorDisciplina; }
+    public String getOrientadorAssinatura() { return orientadorAssinatura; }
+    public void setOrientadorAssinatura(String orientadorAssinatura) { this.orientadorAssinatura = orientadorAssinatura; }
+    public String getCoorientadorAssinatura() { return coorientadorAssinatura; }
+    public void setCoorientadorAssinatura(String coorientadorAssinatura) { this.coorientadorAssinatura = coorientadorAssinatura; }
     public User getCriadoPor() { return criadoPor; }
     public void setCriadoPor(User criadoPor) { this.criadoPor = criadoPor; }
     public LocalDateTime getCreatedAt() { return createdAt; }

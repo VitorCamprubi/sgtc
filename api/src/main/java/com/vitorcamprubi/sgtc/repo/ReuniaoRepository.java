@@ -11,8 +11,10 @@ import java.util.List;
 
 public interface ReuniaoRepository extends JpaRepository<Reuniao, Long> {
     List<Reuniao> findByGrupoIdOrderByDataHoraDesc(Long grupoId);
+    List<Reuniao> findByGrupoIdAndStatusOrderByNumeroEncontroAscEncerradaEmAsc(Long grupoId, ReuniaoStatus status);
     void deleteByGrupoId(Long grupoId);
     long countByCriadoPorId(Long criadoPorId);
+    boolean existsByGrupoIdAndStatusAndNumeroEncontro(Long grupoId, ReuniaoStatus status, Integer numeroEncontro);
 
     @Query("""
             select r from Reuniao r
