@@ -4,6 +4,9 @@ import com.vitorcamprubi.sgtc.security.AuthService;
 import com.vitorcamprubi.sgtc.service.GrupoService;
 import com.vitorcamprubi.sgtc.web.dto.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +21,14 @@ public class GrupoController {
 
     public GrupoController(GrupoService service, AuthService auth) {
         this.service = service; this.auth = auth;
+    }
+
+    public record DefinirNotaRequest(
+            @NotNull
+            @DecimalMin(value = "0.0", inclusive = true)
+            @DecimalMax(value = "10.0", inclusive = true)
+            Double notaFinal
+    ) {
     }
 
     @PostMapping
@@ -35,6 +46,21 @@ public class GrupoController {
     @GetMapping("/me")
     public List<GrupoResumoDTO> meusGrupos() {
         return service.listarDoUsuario(auth.getCurrentUser());
+    }
+
+    @GetMapping("/me/arquivos")
+    public List<GrupoResumoDTO> meusArquivos(@RequestParam(required = false) String busca) {
+        return service.listarArquivadosDoUsuario(auth.getCurrentUser(), busca);
+    }
+
+    @GetMapping("/me/arquivos/aprovados")
+    public List<GrupoResumoDTO> meusArquivosAprovados(@RequestParam(required = false) String busca) {
+        return service.listarArquivadosAprovadosDoUsuario(auth.getCurrentUser(), busca);
+    }
+
+    @GetMapping("/me/arquivos/reprovados")
+    public List<GrupoResumoDTO> meusArquivosReprovados(@RequestParam(required = false) String busca) {
+        return service.listarArquivadosReprovadosDoUsuario(auth.getCurrentUser(), busca);
     }
 
     @GetMapping("/{id}")
@@ -69,5 +95,11 @@ public class GrupoController {
     @PreAuthorize("hasRole('ADMIN')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id, auth.getCurrentUser());
+    }
+
+    @PostMapping("/{id}/nota-final")
+    @PreAuthorize("hasRole('ADMIN')")
+    public GrupoResumoDTO definirNotaFinal(@PathVariable Long id, @RequestBody @Valid DefinirNotaRequest req) {
+        return service.definirNotaFinal(id, req.notaFinal(), auth.getCurrentUser());
     }
 }

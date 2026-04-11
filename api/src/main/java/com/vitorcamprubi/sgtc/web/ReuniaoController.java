@@ -6,10 +6,9 @@ import com.vitorcamprubi.sgtc.service.ReuniaoPdfService;
 import com.vitorcamprubi.sgtc.service.ReuniaoService;
 import com.vitorcamprubi.sgtc.web.dto.ReuniaoDTO;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -45,13 +44,10 @@ public class ReuniaoController {
     }
 
     public record ConcluirReuniaoRequest(
-            @NotNull @Min(1) @Max(6) Integer numeroEncontro,
             @NotNull LocalDate dataAtividadesRealizadas,
-            @NotBlank String atividadesRealizadas,
+            @NotBlank @Size(max = ReuniaoService.MAX_ATIVIDADES_REALIZADAS) String atividadesRealizadas,
             @NotNull ReuniaoDesempenhoGrupo desempenhoGrupo,
-            @NotBlank String professorDisciplina,
-            @NotBlank String orientadorAssinatura,
-            @NotBlank String coorientadorAssinatura
+            @NotBlank String professorDisciplina
     ) {
     }
 
@@ -70,13 +66,10 @@ public class ReuniaoController {
     @PostMapping("/reunioes/{reuniaoId}/concluir")
     public ReuniaoDTO concluir(@PathVariable Long reuniaoId, @RequestBody @Valid ConcluirReuniaoRequest req) {
         var dados = new ReuniaoService.ExecucaoReuniaoDados(
-                req.numeroEncontro(),
                 req.dataAtividadesRealizadas(),
                 req.atividadesRealizadas(),
                 req.desempenhoGrupo(),
-                req.professorDisciplina(),
-                req.orientadorAssinatura(),
-                req.coorientadorAssinatura()
+                req.professorDisciplina()
         );
         var r = service.concluir(reuniaoId, dados, auth.getCurrentUser());
         return ReuniaoDTO.of(r);

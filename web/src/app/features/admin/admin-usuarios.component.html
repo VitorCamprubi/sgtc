@@ -82,16 +82,13 @@
 
     <div class="admin-users-form card">
       <h4>{{ editandoId() ? 'Editar usuario' : 'Novo usuario' }}</h4>
+      <p class="role-hint">Perfil definido pela aba ativa: <strong>{{ roleCadastroLabel() }}</strong></p>
       <div class="form-grid">
         <input placeholder="Nome" [(ngModel)]="formNome" />
         <input placeholder="Email" type="email" [(ngModel)]="formEmail" />
         <input placeholder="Senha" type="password" [(ngModel)]="formSenha" [required]="!editandoId()" />
-        <select [(ngModel)]="formRole">
-          <option value="ALUNO">Aluno</option>
-          <option value="PROFESSOR">Professor</option>
-        </select>
-        @if (formRole === 'ALUNO') {
-          <input placeholder="RA (opcional)" [(ngModel)]="formRa" />
+        @if (adminRoleFiltro() === 'ALUNO') {
+          <input placeholder="RA (obrigatorio)" [(ngModel)]="formRa" [required]="true" />
         }
       </div>
       <div class="form-actions">

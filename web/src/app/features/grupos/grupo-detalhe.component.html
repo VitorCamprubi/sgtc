@@ -3,6 +3,9 @@
     <div>
       <h2>{{ grupoTitulo() || ('Grupo ' + grupoId) }}</h2>
       <p class="section-subtitle">Gerencie documentos, comentarios, reunioes e membros do grupo.</p>
+      @if (grupoArquivado()) {
+        <p class="status-locked">Grupo arquivado. Alteracoes estao bloqueadas.</p>
+      }
     </div>
     <button type="button" class="ghost-small" (click)="atualizarPainel()">Atualizar painel</button>
   </header>
@@ -33,7 +36,7 @@
       <div class="upload-grid">
         <input type="text" placeholder="Titulo do documento" [(ngModel)]="tituloDocumento" />
         <input #fileInput type="file" (change)="onFileSelected($event)" />
-        <button (click)="uploadFromState(fileInput)" [disabled]="!tituloDocumento.trim() || !arquivoSelecionado">Enviar</button>
+        <button (click)="uploadFromState(fileInput)" [disabled]="!canUploadDocumento() || !tituloDocumento.trim() || !arquivoSelecionado">Enviar</button>
       </div>
 
       <div class="table-shell">
@@ -234,13 +237,6 @@
                     <tr class="row-expand">
                       <td [attr.colspan]="canManageReunioes() ? 6 : 5">
                         <div class="conclusao-box">
-                          <label for="encontro-reuniao-{{ r.id }}">Numero do encontro (1 a 6)</label>
-                          <input id="encontro-reuniao-{{ r.id }}"
-                                 type="number"
-                                 min="1"
-                                 max="6"
-                                 [(ngModel)]="execucaoNumeroEncontro" />
-
                           <label for="data-atividades-reuniao-{{ r.id }}">Data das atividades</label>
                           <input id="data-atividades-reuniao-{{ r.id }}"
                                  type="date"
@@ -250,7 +246,12 @@
                           <textarea id="atividades-reuniao-{{ r.id }}"
                                     rows="4"
                                     placeholder="Descreva as atividades realizadas no encontro."
+                                    [attr.maxlength]="maxAtividadesRealizadas"
                                     [(ngModel)]="execucaoAtividadesRealizadas"></textarea>
+                          <p class="char-counter"
+                             [class.limit]="execucaoAtividadesRealizadas.length >= maxAtividadesRealizadas">
+                            {{ execucaoAtividadesRealizadas.length }} / {{ maxAtividadesRealizadas }} caracteres
+                          </p>
 
                           <label for="desempenho-reuniao-{{ r.id }}">Desempenho do grupo</label>
                           <select id="desempenho-reuniao-{{ r.id }}" [(ngModel)]="execucaoDesempenho">
@@ -265,20 +266,10 @@
                           <input id="prof-disciplina-reuniao-{{ r.id }}"
                                  type="text"
                                  [(ngModel)]="execucaoProfessorDisciplina" />
-
-                          <label for="orientador-reuniao-{{ r.id }}">Orientador</label>
-                          <input id="orientador-reuniao-{{ r.id }}"
-                                 type="text"
-                                 [(ngModel)]="execucaoOrientadorAssinatura" />
-
-                          <label for="coorientador-reuniao-{{ r.id }}">Co-Orientador</label>
-                          <input id="coorientador-reuniao-{{ r.id }}"
-                                 type="text"
-                                 [(ngModel)]="execucaoCoorientadorAssinatura" />
                           <div class="inline-actions">
                             <button type="button"
                                     (click)="concluirReuniao(r)"
-                                    [disabled]="!execucaoNumeroEncontro || !execucaoDataAtividades || !execucaoAtividadesRealizadas.trim() || !execucaoDesempenho || !execucaoProfessorDisciplina.trim() || !execucaoOrientadorAssinatura.trim() || !execucaoCoorientadorAssinatura.trim()">
+                                    [disabled]="!execucaoDataAtividades || !execucaoAtividadesRealizadas.trim() || !execucaoDesempenho || !execucaoProfessorDisciplina.trim()">
                               Marcar como executada
                             </button>
                             <button type="button" class="ghost-small" (click)="cancelarConclusaoReuniao()">Cancelar</button>
@@ -306,39 +297,23 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Data/Hora</th>
-                <th>Pauta</th>
-                <th>Status</th>
                 <th>Encontro</th>
-                <th>Data atividades</th>
+                <th>Data realizada</th>
+                <th>Status</th>
                 <th>Desempenho</th>
-                <th>Atividades realizadas</th>
-                <th>Prof. Disciplina</th>
-                <th>Orientador</th>
-                <th>Co-Orientador</th>
                 <th>Relatorio</th>
-                <th>Observacoes</th>
-                <th>Criado por</th>
-                <th>Encerrada em</th>
+                <th>Prof. Disciplina</th>
               </tr>
             </thead>
             <tbody>
               @for (r of historicoReunioes(); track r.id) {
                 <tr>
-                  <td>{{ r.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
-                  <td>{{ r.pauta }}</td>
-                  <td><span [class]="statusReuniaoClass(r.status)">{{ statusReuniaoLabel(r.status) }}</span></td>
                   <td>{{ r.numeroEncontro || '-' }}</td>
                   <td>{{ r.dataAtividadesRealizadas ? (r.dataAtividadesRealizadas | date:'dd/MM/yyyy') : '-' }}</td>
+                  <td><span [class]="statusReuniaoClass(r.status)">{{ statusReuniaoLabel(r.status) }}</span></td>
                   <td>{{ desempenhoLabel(r.desempenhoGrupo) }}</td>
-                  <td>{{ r.atividadesRealizadas || '-' }}</td>
+                  <td>{{ r.relatorio || r.atividadesRealizadas || '-' }}</td>
                   <td>{{ r.professorDisciplina || '-' }}</td>
-                  <td>{{ r.orientadorAssinatura || '-' }}</td>
-                  <td>{{ r.coorientadorAssinatura || '-' }}</td>
-                  <td>{{ r.relatorio || '-' }}</td>
-                  <td>{{ r.observacoes || '-' }}</td>
-                  <td>{{ r.criadoPor }}</td>
-                  <td>{{ r.encerradaEm ? (r.encerradaEm | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
                 </tr>
               }
             </tbody>
@@ -366,7 +341,7 @@
                   <strong>{{ m.nome }}</strong>
                   <span>{{ m.email }}</span>
                 </div>
-                @if (isAdmin()) {
+                @if (canManageMembros()) {
                   <button type="button"
                           class="ghost-small danger"
                           [disabled]="removendoMembroId() === m.id"
@@ -380,18 +355,29 @@
         }
       </section>
 
-      @if (isAdmin()) {
+      @if (canManageMembros()) {
         <section class="card-block">
           <div class="block-header">
             <h3>Admin - Adicionar membros</h3>
             <p class="block-subtitle">Selecione um ou mais alunos para incluir no grupo.</p>
           </div>
+          <div class="membros-search">
+            <input type="search"
+                   placeholder="Buscar aluno por nome ou email"
+                   [ngModel]="buscaAluno()"
+                   (ngModelChange)="buscaAluno.set($event)" />
+            <span>{{ membrosSelecionados().length }} selecionado(s)</span>
+          </div>
           <select class="membros-select" multiple size="8" (change)="onMembrosChange($event)">
             @if (alunosDisponiveis().length === 0) {
               <option disabled>Todos os alunos ja fazem parte do grupo.</option>
+            } @else if (alunosDisponiveisFiltrados().length === 0) {
+              <option disabled>Nenhum aluno encontrado para "{{ buscaAluno() }}".</option>
             } @else {
-              @for (a of alunosDisponiveis(); track a.id) {
-                <option [value]="a.id">{{ a.nome }} ({{ a.email }})</option>
+              @for (a of alunosDisponiveisFiltrados(); track a.id) {
+                <option [value]="a.id" [selected]="membrosSelecionados().includes(a.id)">
+                  {{ a.nome }} ({{ a.email }})
+                </option>
               }
             }
           </select>

@@ -15,6 +15,10 @@ public class GrupoAluno {
     @ManyToOne(optional=false) @JoinColumn(name="aluno_id")
     private User aluno;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16, columnDefinition = "varchar(16) default 'EM_CURSO'")
+    private GrupoAlunoStatus status = GrupoAlunoStatus.EM_CURSO;
+
     // getters/setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -22,4 +26,6 @@ public class GrupoAluno {
     public void setGrupo(Grupo grupo) { this.grupo = grupo; }
     public User getAluno() { return aluno; }
     public void setAluno(User aluno) { this.aluno = aluno; }
+    public GrupoAlunoStatus getStatus() { return status; }
+    public void setStatus(GrupoAlunoStatus status) { this.status = status; }
 }

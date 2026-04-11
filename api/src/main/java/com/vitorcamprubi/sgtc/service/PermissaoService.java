@@ -1,6 +1,7 @@
 package com.vitorcamprubi.sgtc.service;
 
 import com.vitorcamprubi.sgtc.domain.Grupo;
+import com.vitorcamprubi.sgtc.domain.GrupoStatus;
 import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
 import com.vitorcamprubi.sgtc.repo.GrupoAlunoRepository;
@@ -29,6 +30,12 @@ public class PermissaoService {
         if (!ok) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissao");
         }
+        if (atual.getRole() == Role.ALUNO && isGrupoArquivado(g)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Grupo arquivado disponivel apenas para professores e administradores"
+            );
+        }
         return g;
     }
 
@@ -43,5 +50,19 @@ public class PermissaoService {
         if (!(atual.getRole() == Role.ADMIN || isOrientadorOuCoorientador(g, atual))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas orientador/coorientador");
         }
+    }
+
+    public void assertGrupoEmCurso(Grupo grupo) {
+        if (statusDoGrupo(grupo) != GrupoStatus.EM_CURSO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Grupo arquivado. Operacao nao permitida");
+        }
+    }
+
+    public boolean isGrupoArquivado(Grupo grupo) {
+        return statusDoGrupo(grupo) != GrupoStatus.EM_CURSO;
+    }
+
+    private GrupoStatus statusDoGrupo(Grupo grupo) {
+        return grupo.getStatus() == null ? GrupoStatus.EM_CURSO : grupo.getStatus();
     }
 }

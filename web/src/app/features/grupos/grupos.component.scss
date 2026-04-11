@@ -40,6 +40,35 @@
   color: var(--sgtc-muted);
 }
 
+.segmented-lista {
+  display: inline-flex;
+  border: 1px solid var(--sgtc-border);
+  border-radius: 12px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.segmented-lista button {
+  border: none;
+  border-right: 1px solid var(--sgtc-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--sgtc-text-strong);
+  box-shadow: none;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  min-width: 110px;
+}
+
+.segmented-lista button:last-child {
+  border-right: none;
+}
+
+.segmented-lista button.active {
+  background: var(--sgtc-primary);
+  color: #fff;
+}
+
 .ghost-button {
   background: transparent;
   color: var(--sgtc-primary);
@@ -113,6 +142,17 @@
   align-items: end;
 }
 
+.search-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.search-row input {
+  min-width: 0;
+}
+
 .form-grid button {
   min-width: 132px;
   justify-self: stretch;
@@ -162,6 +202,35 @@
   font-weight: 600;
 }
 
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.24rem 0.6rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.badge-status.em-curso {
+  color: #0f4f8f;
+  background: rgba(23, 111, 201, 0.12);
+  border-color: rgba(23, 111, 201, 0.3);
+}
+
+.badge-status.aprovado {
+  color: #1b7c3f;
+  background: rgba(40, 167, 69, 0.14);
+  border-color: rgba(40, 167, 69, 0.34);
+}
+
+.badge-status.reprovado {
+  color: #9e1c28;
+  background: rgba(191, 58, 73, 0.14);
+  border-color: rgba(191, 58, 73, 0.34);
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
@@ -175,6 +244,10 @@
   }
 
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-row {
     grid-template-columns: 1fr;
   }
 

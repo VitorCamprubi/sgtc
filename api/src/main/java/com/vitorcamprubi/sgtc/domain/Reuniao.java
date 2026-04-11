@@ -27,7 +27,7 @@ public class Reuniao {
     private ReuniaoStatus status;
 
     @Lob
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String relatorio;
 
     @Column(name="encerrada_em")
@@ -40,7 +40,7 @@ public class Reuniao {
     private LocalDate dataAtividadesRealizadas;
 
     @Lob
-    @Column(name = "atividades_realizadas")
+    @Column(name = "atividades_realizadas", columnDefinition = "TEXT")
     private String atividadesRealizadas;
 
     @Enumerated(EnumType.STRING)

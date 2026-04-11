@@ -26,6 +26,13 @@
   color: var(--sgtc-muted);
 }
 
+.status-locked {
+  margin: 0.35rem 0 0;
+  color: #9e1c28;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .group-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -319,6 +326,18 @@
   min-height: 100px;
 }
 
+.char-counter {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--sgtc-muted);
+  text-align: right;
+}
+
+.char-counter.limit {
+  color: #a74911;
+  font-weight: 600;
+}
+
 .conclusao-box input,
 .conclusao-box select,
 .conclusao-box textarea {
@@ -357,6 +376,22 @@
 
 .membros-select {
   width: 100%;
+}
+
+.membros-search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.membros-search input {
+  width: 100%;
+}
+
+.membros-search span {
+  font-size: 0.8rem;
+  color: var(--sgtc-muted);
 }
 
 .admin-membros-acoes {

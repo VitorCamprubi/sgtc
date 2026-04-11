@@ -104,7 +104,15 @@ public class UserAdminService {
         u.setNome(req.getNome());
         u.setEmail(req.getEmail());
         u.setRole(req.getRole());
-        u.setRa(req.getRole() == Role.ALUNO ? req.getRa() : null);
+        if (req.getRole() == Role.ALUNO) {
+            String ra = normalizarTexto(req.getRa());
+            if (ra == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "RA eh obrigatorio para alunos");
+            }
+            u.setRa(ra);
+        } else {
+            u.setRa(null);
+        }
 
         if (req.getSenha() != null && !req.getSenha().isBlank()) {
             u.setSenhaHash(enc.encode(req.getSenha()));
@@ -120,5 +128,13 @@ public class UserAdminService {
         if (!(role == Role.ALUNO || role == Role.PROFESSOR)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Apenas alunos ou professores podem ser gerenciados aqui");
         }
+    }
+
+    private String normalizarTexto(String valor) {
+        if (valor == null) {
+            return null;
+        }
+        String ajustado = valor.trim();
+        return ajustado.isEmpty() ? null : ajustado;
     }
 }

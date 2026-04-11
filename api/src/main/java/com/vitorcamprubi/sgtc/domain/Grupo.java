@@ -24,6 +24,16 @@ public class Grupo implements Persistable<Long> {
     @Column(nullable=false, length = 3, columnDefinition = "varchar(3) default 'TG'")
     private Materia materia = Materia.TG;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16, columnDefinition = "varchar(16) default 'EM_CURSO'")
+    private GrupoStatus status = GrupoStatus.EM_CURSO;
+
+    @Column(name = "nota_final")
+    private Double notaFinal;
+
+    @Column(name = "arquivado_em")
+    private LocalDateTime arquivadoEm;
+
     @Column(nullable=false, updatable=false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -42,6 +52,12 @@ public class Grupo implements Persistable<Long> {
     public void setCoorientador(User coorientador) { this.coorientador = coorientador; }
     public Materia getMateria() { return materia; }
     public void setMateria(Materia materia) { this.materia = materia; }
+    public GrupoStatus getStatus() { return status; }
+    public void setStatus(GrupoStatus status) { this.status = status; }
+    public Double getNotaFinal() { return notaFinal; }
+    public void setNotaFinal(Double notaFinal) { this.notaFinal = notaFinal; }
+    public LocalDateTime getArquivadoEm() { return arquivadoEm; }
+    public void setArquivadoEm(LocalDateTime arquivadoEm) { this.arquivadoEm = arquivadoEm; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 

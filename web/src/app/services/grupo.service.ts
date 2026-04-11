@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { GrupoResumoDTO } from '../model/grupo-resumo.dto';
 
@@ -18,6 +18,10 @@ export type UpdateMembrosRequest = {
   alunosIds: number[];
 };
 
+export type DefinirNotaFinalRequest = {
+  notaFinal: number;
+};
+
 export type GrupoMembroDTO = {
   id: number;
   nome: string;
@@ -32,6 +36,22 @@ export class GrupoService {
 
   listarMeus(): Observable<GrupoResumoDTO[]> {
     return this.http.get<GrupoResumoDTO[]>('/api/grupos/me');
+  }
+
+  listarArquivos(): Observable<GrupoResumoDTO[]> {
+    return this.http.get<GrupoResumoDTO[]>('/api/grupos/me/arquivos');
+  }
+
+  listarArquivosAprovados(busca?: string): Observable<GrupoResumoDTO[]> {
+    return this.http.get<GrupoResumoDTO[]>('/api/grupos/me/arquivos/aprovados', {
+      params: this.paramsBusca(busca),
+    });
+  }
+
+  listarArquivosReprovados(busca?: string): Observable<GrupoResumoDTO[]> {
+    return this.http.get<GrupoResumoDTO[]>('/api/grupos/me/arquivos/reprovados', {
+      params: this.paramsBusca(busca),
+    });
   }
 
   obter(id: number): Observable<GrupoResumoDTO> {
@@ -66,5 +86,15 @@ export class GrupoService {
 
   deletar(id: number): Observable<void> {
     return this.http.delete<void>(`/api/grupos/${id}`);
+  }
+
+  definirNotaFinal(id: number, notaFinal: number): Observable<GrupoResumoDTO> {
+    const body: DefinirNotaFinalRequest = { notaFinal };
+    return this.http.post<GrupoResumoDTO>(`/api/grupos/${id}/nota-final`, body);
+  }
+
+  private paramsBusca(busca?: string): HttpParams {
+    const termo = (busca ?? '').trim();
+    return termo ? new HttpParams().set('busca', termo) : new HttpParams();
   }
 }

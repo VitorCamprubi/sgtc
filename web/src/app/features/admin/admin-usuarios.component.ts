@@ -22,7 +22,6 @@ export class AdminUsuariosComponent implements OnInit {
   formNome = '';
   formEmail = '';
   formSenha = '';
-  formRole: 'ALUNO' | 'PROFESSOR' = 'ALUNO';
   formRa: string | null = null;
 
   ngOnInit(): void {
@@ -30,6 +29,9 @@ export class AdminUsuariosComponent implements OnInit {
   }
 
   carregarUsuariosAdmin(role: 'ALUNO' | 'PROFESSOR' = this.adminRoleFiltro()) {
+    if (role !== this.adminRoleFiltro()) {
+      this.resetFormUsuario();
+    }
     this.adminRoleFiltro.set(role);
     this.adminError.set(null);
     this.adminLoading.set(true);
@@ -50,12 +52,16 @@ export class AdminUsuariosComponent implements OnInit {
   private payloadAtual(): UsuarioAdminPayload | null {
     const nome = this.formNome.trim();
     const email = this.formEmail.trim();
-    const role = this.formRole;
+    const role = this.adminRoleFiltro();
     const senha = this.formSenha.trim();
     const ra = role === 'ALUNO' ? this.formRa?.trim() || null : null;
 
     if (!nome || !email) {
       this.adminError.set('Preencha nome e email.');
+      return null;
+    }
+    if (role === 'ALUNO' && !ra) {
+      this.adminError.set('RA e obrigatorio para cadastro de aluno.');
       return null;
     }
 
@@ -88,7 +94,6 @@ export class AdminUsuariosComponent implements OnInit {
     this.editandoId.set(u.id);
     this.formNome = u.nome;
     this.formEmail = u.email;
-    this.formRole = u.role as 'ALUNO' | 'PROFESSOR';
     this.formRa = u.role === 'ALUNO' ? u.ra ?? null : null;
     this.formSenha = '';
   }
@@ -111,7 +116,10 @@ export class AdminUsuariosComponent implements OnInit {
     this.formNome = '';
     this.formEmail = '';
     this.formSenha = '';
-    this.formRole = 'ALUNO';
     this.formRa = null;
+  }
+
+  roleCadastroLabel(): string {
+    return this.adminRoleFiltro() === 'ALUNO' ? 'Aluno' : 'Professor';
   }
 }

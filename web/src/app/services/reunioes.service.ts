@@ -52,13 +52,10 @@ export class ReunioesService {
   concluir(
     reuniaoId: number,
     req: {
-      numeroEncontro: number;
       dataAtividadesRealizadas: string;
       atividadesRealizadas: string;
       desempenhoGrupo: ReuniaoDesempenhoGrupo;
       professorDisciplina: string;
-      orientadorAssinatura: string;
-      coorientadorAssinatura: string;
     }
   ) {
     return this.http.post<Reuniao>(`/api/reunioes/${reuniaoId}/concluir`, req);

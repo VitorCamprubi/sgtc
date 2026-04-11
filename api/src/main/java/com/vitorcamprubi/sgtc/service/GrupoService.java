@@ -2,6 +2,8 @@ package com.vitorcamprubi.sgtc.service;
 
 import com.vitorcamprubi.sgtc.domain.Grupo;
 import com.vitorcamprubi.sgtc.domain.GrupoAluno;
+import com.vitorcamprubi.sgtc.domain.GrupoAlunoStatus;
+import com.vitorcamprubi.sgtc.domain.GrupoStatus;
 import com.vitorcamprubi.sgtc.domain.Materia;
 import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
@@ -19,9 +21,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.Normalizer;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.HashMap;
 
 @Service
 public class GrupoService {
@@ -51,6 +62,9 @@ public class GrupoService {
         Grupo g = new Grupo();
         g.setId(proximoIdDisponivel());
         preencherDadosGrupo(g, req);
+        g.setStatus(GrupoStatus.EM_CURSO);
+        g.setNotaFinal(null);
+        g.setArquivadoEm(null);
         g = grupos.save(g);
         return toResumo(g);
     }
@@ -59,6 +73,8 @@ public class GrupoService {
     public GrupoResumoDTO atualizar(Long grupoId, GrupoCreateRequest req) {
         Grupo g = grupos.findById(grupoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grupo nao encontrado"));
+        normalizarStatusGrupo(g);
+        perms.assertGrupoEmCurso(g);
 
         preencherDadosGrupo(g, req);
         return toResumo(grupos.save(g));
@@ -72,16 +88,20 @@ public class GrupoService {
 
         Grupo g = grupos.findById(grupoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grupo nao encontrado"));
+        normalizarStatusGrupo(g);
+        perms.assertGrupoEmCurso(g);
 
         for (Long alunoId : new LinkedHashSet<>(alunosIds)) {
             User u = buscaUser(alunoId);
             if (u.getRole() != Role.ALUNO) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario " + alunoId + " nao eh ALUNO");
             }
+            assertAlunoElegivelParaGrupo(u, g);
             if (!grupoAlunos.existsByGrupoIdAndAlunoId(grupoId, alunoId)) {
                 GrupoAluno ga = new GrupoAluno();
                 ga.setGrupo(g);
                 ga.setAluno(u);
+                ga.setStatus(GrupoAlunoStatus.EM_CURSO);
                 grupoAlunos.save(ga);
             }
         }
@@ -93,8 +113,10 @@ public class GrupoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Lista de alunos obrigatoria");
         }
 
-        grupos.findById(grupoId)
+        Grupo grupo = grupos.findById(grupoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grupo nao encontrado"));
+        normalizarStatusGrupo(grupo);
+        perms.assertGrupoEmCurso(grupo);
 
         grupoAlunos.deleteByGrupoId(grupoId);
 
@@ -107,19 +129,44 @@ public class GrupoService {
     }
 
     public List<GrupoResumoDTO> listarDoUsuario(User atual) {
-        List<Grupo> lista;
-        if (atual.getRole() == Role.ADMIN) {
-            lista = grupos.findAll();
-        } else if (atual.getRole() == Role.PROFESSOR) {
-            lista = grupos.findByOrientadorIdOrCoorientadorId(atual.getId(), atual.getId());
-        } else {
-            lista = grupos.findByAlunoId(atual.getId());
+        return listarPorStatusDoUsuario(atual, null, GrupoStatus.EM_CURSO);
+    }
+
+    public List<GrupoResumoDTO> listarArquivadosDoUsuario(User atual, String busca) {
+        if (atual.getRole() == Role.ALUNO) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Somente professores e administradores podem acessar arquivos"
+            );
         }
-        return lista.stream().map(this::toResumo).toList();
+        return listarPorStatusDoUsuario(atual, busca, GrupoStatus.APROVADO, GrupoStatus.REPROVADO);
+    }
+
+    public List<GrupoResumoDTO> listarArquivadosAprovadosDoUsuario(User atual, String busca) {
+        if (atual.getRole() == Role.ALUNO) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Somente professores e administradores podem acessar arquivos"
+            );
+        }
+        return listarPorStatusDoUsuario(atual, busca, GrupoStatus.APROVADO);
+    }
+
+    public List<GrupoResumoDTO> listarArquivadosReprovadosDoUsuario(User atual, String busca) {
+        if (atual.getRole() == Role.ALUNO) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Somente professores e administradores podem acessar arquivos"
+            );
+        }
+        return listarPorStatusDoUsuario(atual, busca, GrupoStatus.REPROVADO);
     }
 
     public GrupoResumoDTO obterResumo(Long grupoId, User atual) {
         Grupo grupo = perms.assertPodeAcessarGrupo(grupoId, atual);
+        if (normalizarStatusGrupo(grupo)) {
+            grupo = grupos.save(grupo);
+        }
         return toResumo(grupo);
     }
 
@@ -130,8 +177,10 @@ public class GrupoService {
 
     @Transactional
     public void removerMembro(Long grupoId, Long alunoId) {
-        grupos.findById(grupoId)
+        Grupo grupo = grupos.findById(grupoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grupo nao encontrado"));
+        normalizarStatusGrupo(grupo);
+        perms.assertGrupoEmCurso(grupo);
 
         User aluno = buscaUser(alunoId);
         if (aluno.getRole() != Role.ALUNO) {
@@ -152,6 +201,13 @@ public class GrupoService {
 
         Grupo g = grupos.findById(grupoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grupo nao encontrado"));
+        normalizarStatusGrupo(g);
+        if (perms.isGrupoArquivado(g)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Grupo arquivado nao pode ser excluido"
+            );
+        }
 
         var docs = documentos.findByGrupoIdOrderByVersaoDesc(grupoId);
         for (var d : docs) {
@@ -165,6 +221,37 @@ public class GrupoService {
         reunioes.deleteByGrupoId(grupoId);
         grupoAlunos.deleteByGrupoId(grupoId);
         grupos.delete(g);
+    }
+
+    @Transactional
+    public GrupoResumoDTO definirNotaFinal(Long grupoId, Double notaInformada, User atual) {
+        if (atual.getRole() != Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas ADMIN pode definir nota final");
+        }
+
+        Grupo grupo = grupos.findById(grupoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Grupo nao encontrado"));
+        normalizarStatusGrupo(grupo);
+        perms.assertGrupoEmCurso(grupo);
+
+        double nota = validarENormalizarNota(notaInformada);
+        GrupoStatus novoStatus = nota >= 6.0d ? GrupoStatus.APROVADO : GrupoStatus.REPROVADO;
+
+        grupo.setNotaFinal(nota);
+        grupo.setStatus(novoStatus);
+        grupo.setArquivadoEm(LocalDateTime.now());
+        grupos.save(grupo);
+
+        GrupoAlunoStatus statusMembro = mapearStatusMembro(novoStatus);
+        List<GrupoAluno> membros = grupoAlunos.findByGrupoId(grupoId);
+        for (GrupoAluno membro : membros) {
+            membro.setStatus(statusMembro);
+        }
+        if (!membros.isEmpty()) {
+            grupoAlunos.saveAll(membros);
+        }
+
+        return toResumo(grupo);
     }
 
     private User buscaUser(Long id) {
@@ -209,11 +296,15 @@ public class GrupoService {
     }
 
     private GrupoResumoDTO toResumo(Grupo g) {
+        GrupoStatus status = statusDoGrupo(g);
         long count = grupoAlunos.countByGrupoId(g.getId());
         return new GrupoResumoDTO(
                 g.getId(),
                 g.getTitulo(),
                 g.getMateria(),
+                status,
+                g.getNotaFinal(),
+                g.getArquivadoEm(),
                 g.getOrientador() != null ? g.getOrientador().getId() : null,
                 g.getOrientador() != null ? g.getOrientador().getNome() : null,
                 g.getCoorientador() != null ? g.getCoorientador().getId() : null,
@@ -237,5 +328,152 @@ public class GrupoService {
             }
         }
         return esperado;
+    }
+
+    private List<GrupoResumoDTO> listarPorStatusDoUsuario(User atual, String busca, GrupoStatus... statusAceitos) {
+        Set<GrupoStatus> statuses = new LinkedHashSet<>(List.of(statusAceitos));
+        String termoBusca = normalizarBusca(busca);
+        List<Grupo> lista = listarGruposAcessiveis(atual);
+
+        List<Grupo> paraSalvar = new ArrayList<>();
+        for (Grupo grupo : lista) {
+            if (normalizarStatusGrupo(grupo)) {
+                paraSalvar.add(grupo);
+            }
+        }
+        if (!paraSalvar.isEmpty()) {
+            grupos.saveAll(paraSalvar);
+        }
+
+        final Map<Long, List<String>> nomesAlunosPorGrupo = termoBusca == null
+                ? Map.of()
+                : carregarNomesAlunosPorGrupo(lista);
+
+        return lista.stream()
+                .filter(grupo -> statuses.contains(statusDoGrupo(grupo)))
+                .filter(grupo -> termoBusca == null || correspondeBusca(grupo, termoBusca, nomesAlunosPorGrupo))
+                .sorted(Comparator.comparing(Grupo::getId))
+                .map(this::toResumo)
+                .toList();
+    }
+
+    private List<Grupo> listarGruposAcessiveis(User atual) {
+        if (atual.getRole() == Role.ADMIN) {
+            return grupos.findAll();
+        }
+        if (atual.getRole() == Role.PROFESSOR) {
+            return grupos.findByOrientadorIdOrCoorientadorId(atual.getId(), atual.getId());
+        }
+        return grupos.findByAlunoId(atual.getId());
+    }
+
+    private boolean normalizarStatusGrupo(Grupo grupo) {
+        if (grupo.getStatus() != null) {
+            return false;
+        }
+        grupo.setStatus(GrupoStatus.EM_CURSO);
+        return true;
+    }
+
+    private GrupoStatus statusDoGrupo(Grupo grupo) {
+        return grupo.getStatus() == null ? GrupoStatus.EM_CURSO : grupo.getStatus();
+    }
+
+    private void assertAlunoElegivelParaGrupo(User aluno, Grupo grupo) {
+        Long alunoId = aluno.getId();
+        boolean aprovadoTG = grupoAlunos.existsByAlunoIdAndGrupoMateriaAndGrupoStatus(
+                alunoId,
+                Materia.TG,
+                GrupoStatus.APROVADO
+        );
+        boolean aprovadoPTG = grupoAlunos.existsByAlunoIdAndGrupoMateriaAndGrupoStatus(
+                alunoId,
+                Materia.PTG,
+                GrupoStatus.APROVADO
+        );
+
+        if (aprovadoTG && aprovadoPTG) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Aluno " + aluno.getNome() + " ja foi aprovado em TG e PTG e nao pode entrar em novos grupos"
+            );
+        }
+
+        if (grupo.getMateria() == Materia.TG && aprovadoTG) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Aluno " + aluno.getNome() + " ja foi aprovado em TG e nao pode entrar em novo grupo TG"
+            );
+        }
+
+        if (grupo.getMateria() == Materia.PTG && aprovadoPTG) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Aluno " + aluno.getNome() + " ja foi aprovado em PTG e nao pode entrar em novo grupo PTG"
+            );
+        }
+    }
+
+    private double validarENormalizarNota(Double notaInformada) {
+        if (notaInformada == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nota final eh obrigatoria");
+        }
+        if (Double.isNaN(notaInformada) || Double.isInfinite(notaInformada)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nota final invalida");
+        }
+        if (notaInformada < 0d || notaInformada > 10d) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nota final deve estar entre 0 e 10");
+        }
+        return BigDecimal.valueOf(notaInformada)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+    }
+
+    private GrupoAlunoStatus mapearStatusMembro(GrupoStatus statusGrupo) {
+        return statusGrupo == GrupoStatus.APROVADO ? GrupoAlunoStatus.APROVADO : GrupoAlunoStatus.REPROVADO;
+    }
+
+    private Map<Long, List<String>> carregarNomesAlunosPorGrupo(List<Grupo> gruposAcessiveis) {
+        List<Long> grupoIds = gruposAcessiveis.stream()
+                .map(Grupo::getId)
+                .distinct()
+                .toList();
+        if (grupoIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Object[]> linhas = grupoAlunos.findGrupoIdAndAlunoNomeByGrupoIds(grupoIds);
+        Map<Long, List<String>> nomesPorGrupo = new HashMap<>();
+        for (Object[] linha : linhas) {
+            if (linha == null || linha.length < 2 || !(linha[0] instanceof Long grupoId)) {
+                continue;
+            }
+            String nomeAluno = linha[1] == null ? "" : linha[1].toString();
+            String nomeNormalizado = normalizarBusca(nomeAluno);
+            if (nomeNormalizado != null) {
+                nomesPorGrupo.computeIfAbsent(grupoId, ignored -> new ArrayList<>())
+                        .add(nomeNormalizado);
+            }
+        }
+        return nomesPorGrupo;
+    }
+
+    private boolean correspondeBusca(Grupo grupo, String termo, Map<Long, List<String>> nomesAlunosPorGrupo) {
+        String tituloNormalizado = normalizarBusca(grupo.getTitulo());
+        if (tituloNormalizado != null && tituloNormalizado.contains(termo)) {
+            return true;
+        }
+        List<String> nomes = nomesAlunosPorGrupo.getOrDefault(grupo.getId(), List.of());
+        return nomes.stream().anyMatch(nome -> nome.contains(termo));
+    }
+
+    private String normalizarBusca(String texto) {
+        if (texto == null || texto.isBlank()) {
+            return null;
+        }
+        return Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT)
+                .trim();
     }
 }

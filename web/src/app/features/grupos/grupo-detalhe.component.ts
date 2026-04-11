@@ -34,9 +34,11 @@ export class GrupoDetalheComponent implements OnInit {
   faDownload = faDownload;
   faComments = faComments;
   faTrashCan = faTrashCan;
+  readonly maxAtividadesRealizadas = 340;
 
   grupoId = 0;
   grupoTitulo = signal<string>('');
+  grupoStatus = signal<GrupoResumoDTO['status'] | null>(null);
   abaAtiva = signal<'documentos' | 'reunioes' | 'membros'>('documentos');
   lista = signal<DocumentoVersao[] | null>(null);
   error = signal<string | null>(null);
@@ -63,13 +65,10 @@ export class GrupoDetalheComponent implements OnInit {
   editarPauta = '';
   editarObservacoes = '';
   concluindoReuniaoId = signal<number | null>(null);
-  execucaoNumeroEncontro: number | null = null;
   execucaoDataAtividades = '';
   execucaoAtividadesRealizadas = '';
   execucaoDesempenho: ReuniaoDesempenhoGrupo | '' = '';
   execucaoProfessorDisciplina = '';
-  execucaoOrientadorAssinatura = '';
-  execucaoCoorientadorAssinatura = '';
   gerandoPdf = signal<boolean>(false);
 
   isAdmin = signal<boolean>(false);
@@ -77,23 +76,42 @@ export class GrupoDetalheComponent implements OnInit {
   membrosGrupo = signal<GrupoMembroDTO[] | null>(null);
   membrosSelecionados = signal<number[]>([]);
   removendoMembroId = signal<number | null>(null);
+  buscaAluno = signal<string>('');
 
   alunosDisponiveis = computed(() => {
     const idsMembros = new Set((this.membrosGrupo() ?? []).map((m) => m.id));
     return this.alunos().filter((a) => !idsMembros.has(a.id));
   });
 
-  canComment = computed(() => {
-    const role = this.currentUser()?.role;
-    return role === 'ADMIN' || role === 'PROFESSOR';
+  alunosDisponiveisFiltrados = computed(() => {
+    const termo = this.normalizarBuscaAluno(this.buscaAluno());
+    if (!termo) return this.alunosDisponiveis();
+
+    return this.alunosDisponiveis().filter((a) =>
+      this.normalizarBuscaAluno(`${a.nome} ${a.email}`).includes(termo)
+    );
   });
 
-  canCreateReuniao = computed(() => this.currentUser() !== null);
+  grupoArquivado = computed(() => {
+    const status = this.grupoStatus();
+    return status !== null && status !== 'EM_CURSO';
+  });
+
+  canComment = computed(() => {
+    const role = this.currentUser()?.role;
+    return !this.grupoArquivado() && (role === 'ADMIN' || role === 'PROFESSOR');
+  });
+
+  canUploadDocumento = computed(() => this.currentUser() !== null && !this.grupoArquivado());
+
+  canCreateReuniao = computed(() => this.currentUser() !== null && !this.grupoArquivado());
 
   canManageReunioes = computed(() => {
     const role = this.currentUser()?.role;
-    return role === 'ADMIN' || role === 'PROFESSOR';
+    return !this.grupoArquivado() && (role === 'ADMIN' || role === 'PROFESSOR');
   });
+
+  canManageMembros = computed(() => this.isAdmin() && !this.grupoArquivado());
 
   reunioesAbertas = computed(() =>
     (this.listaReunioes() ?? []).filter((r) => this.isReuniaoAberta(r))
@@ -139,9 +157,13 @@ export class GrupoDetalheComponent implements OnInit {
 
   private carregarResumoGrupo() {
     this.grupos.obter(this.grupoId).subscribe({
-      next: (g: GrupoResumoDTO) => this.grupoTitulo.set(g.titulo),
+      next: (g: GrupoResumoDTO) => {
+        this.grupoTitulo.set(g.titulo);
+        this.grupoStatus.set(g.status);
+      },
       error: (e) => {
         this.grupoTitulo.set('');
+        this.grupoStatus.set(null);
         this.error.set(`${e.status} ${e.statusText}`);
       },
     });
@@ -161,6 +183,11 @@ export class GrupoDetalheComponent implements OnInit {
   }
 
   uploadFromState(fileInput: HTMLInputElement) {
+    if (!this.canUploadDocumento()) {
+      this.error.set('Grupo arquivado. Nao e possivel enviar novos documentos.');
+      return;
+    }
+
     const file = this.arquivoSelecionado;
     const titulo = this.tituloDocumento.trim();
     if (!file || !titulo) {
@@ -180,6 +207,7 @@ export class GrupoDetalheComponent implements OnInit {
   }
 
   canDelete(doc: DocumentoVersao): boolean {
+    if (this.grupoArquivado()) return false;
     const u = this.currentUser();
     if (!u) return false;
     if (u.role === 'ADMIN' || u.role === 'PROFESSOR') return true;
@@ -273,6 +301,7 @@ export class GrupoDetalheComponent implements OnInit {
   }
 
   podeGerenciarComentario(c: Comentario): boolean {
+    if (this.grupoArquivado()) return false;
     const u = this.currentUser();
     if (!u) return false;
     return u.role === 'ADMIN' || u.id === c.autorId;
@@ -343,6 +372,10 @@ export class GrupoDetalheComponent implements OnInit {
   }
 
   agendarReuniao() {
+    if (this.grupoArquivado()) {
+      this.error.set('Grupo arquivado. Nao e possivel agendar reunioes.');
+      return;
+    }
     if (!this.canCreateReuniao()) return;
 
     const dataHora = this.novaDataHora;
@@ -406,62 +439,51 @@ export class GrupoDetalheComponent implements OnInit {
   iniciarConclusaoReuniao(r: Reuniao) {
     if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
     this.concluindoReuniaoId.set(r.id);
-    this.execucaoNumeroEncontro = this.proximoEncontroSugerido();
-    this.execucaoDataAtividades = this.toDateValue(r.dataHora);
+    this.execucaoDataAtividades = this.hojeComoDataInput();
     this.execucaoAtividadesRealizadas = '';
     this.execucaoDesempenho = '';
     this.execucaoProfessorDisciplina = this.currentUser()?.nome ?? '';
-    this.execucaoOrientadorAssinatura = '';
-    this.execucaoCoorientadorAssinatura = '';
     this.cancelarEdicaoReuniao();
   }
 
   cancelarConclusaoReuniao() {
     this.concluindoReuniaoId.set(null);
-    this.execucaoNumeroEncontro = null;
     this.execucaoDataAtividades = '';
     this.execucaoAtividadesRealizadas = '';
     this.execucaoDesempenho = '';
     this.execucaoProfessorDisciplina = '';
-    this.execucaoOrientadorAssinatura = '';
-    this.execucaoCoorientadorAssinatura = '';
   }
 
   concluirReuniao(r: Reuniao) {
     if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
 
-    const numeroEncontro = this.execucaoNumeroEncontro;
     const dataAtividadesRealizadas = this.execucaoDataAtividades;
     const atividadesRealizadas = this.execucaoAtividadesRealizadas.trim();
     const desempenhoGrupo = this.execucaoDesempenho;
     const professorDisciplina = this.execucaoProfessorDisciplina.trim();
-    const orientadorAssinatura = this.execucaoOrientadorAssinatura.trim();
-    const coorientadorAssinatura = this.execucaoCoorientadorAssinatura.trim();
 
     if (
-      !numeroEncontro ||
-      numeroEncontro < 1 ||
-      numeroEncontro > 6 ||
       !dataAtividadesRealizadas ||
       !atividadesRealizadas ||
       !desempenhoGrupo ||
-      !professorDisciplina ||
-      !orientadorAssinatura ||
-      !coorientadorAssinatura
+      !professorDisciplina
     ) {
       this.error.set('Preencha todos os campos da execucao da reuniao.');
+      return;
+    }
+    if (atividadesRealizadas.length > this.maxAtividadesRealizadas) {
+      this.error.set(
+        `Atividades realizadas ultrapassam o limite de ${this.maxAtividadesRealizadas} caracteres.`
+      );
       return;
     }
 
     this.reunioes
       .concluir(r.id, {
-        numeroEncontro,
         dataAtividadesRealizadas,
         atividadesRealizadas,
         desempenhoGrupo,
         professorDisciplina,
-        orientadorAssinatura,
-        coorientadorAssinatura,
       })
       .subscribe({
       next: () => {
@@ -487,7 +509,7 @@ export class GrupoDetalheComponent implements OnInit {
   }
 
   adicionarMembros() {
-    if (!this.isAdmin()) return;
+    if (!this.canManageMembros()) return;
 
     const ids = this.membrosSelecionados();
     if (!ids.length) return;
@@ -505,12 +527,23 @@ export class GrupoDetalheComponent implements OnInit {
     const select = ev.target as HTMLSelectElement | null;
     if (!select) return;
 
-    const ids = Array.from(select.selectedOptions).map((o) => Number(o.value));
-    this.membrosSelecionados.set(ids);
+    const idsVisiveis = Array.from(select.options)
+      .map((o) => Number(o.value))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    const idsSelecionadosVisiveis = Array.from(select.selectedOptions)
+      .map((o) => Number(o.value))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    const idsSelecionadosOcultos = this.membrosSelecionados().filter(
+      (id) => !idsVisiveis.includes(id)
+    );
+
+    this.membrosSelecionados.set([
+      ...new Set([...idsSelecionadosOcultos, ...idsSelecionadosVisiveis]),
+    ]);
   }
 
   removerMembro(membro: GrupoMembroDTO) {
-    if (!this.isAdmin()) return;
+    if (!this.canManageMembros()) return;
     if (!confirm(`Remover "${membro.nome}" deste grupo?`)) return;
 
     this.removendoMembroId.set(membro.id);
@@ -615,21 +648,10 @@ export class GrupoDetalheComponent implements OnInit {
     return dataHora.length >= 16 ? dataHora.slice(0, 16) : dataHora;
   }
 
-  private toDateValue(dataHora: string): string {
-    return dataHora.length >= 10 ? dataHora.slice(0, 10) : '';
-  }
-
-  private proximoEncontroSugerido(): number {
-    const usados = new Set(
-      this.historicoReunioes()
-        .filter((r) => r.status === 'CONCLUIDA' && r.numeroEncontro)
-        .map((r) => r.numeroEncontro as number)
-    );
-
-    for (let i = 1; i <= 6; i += 1) {
-      if (!usados.has(i)) return i;
-    }
-    return 6;
+  private hojeComoDataInput(): string {
+    const hoje = new Date();
+    hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
+    return hoje.toISOString().slice(0, 10);
   }
 
   private filenameFromContentDisposition(
@@ -655,5 +677,13 @@ export class GrupoDetalheComponent implements OnInit {
     if (secao === 'reunioes') return 'reunioes';
     if (secao === 'membros') return 'membros';
     return 'documentos';
+  }
+
+  private normalizarBuscaAluno(valor: string): string {
+    return (valor ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   }
 }

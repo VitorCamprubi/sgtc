@@ -8,6 +8,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDFontDescriptor;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.core.io.ClassPathResource;
@@ -33,6 +34,11 @@ public class ReuniaoPdfService {
 
     private static final PDFont FONT_TEXT = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
     private static final PDFont FONT_BOLD = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+    private static final float ATIVIDADES_FONT_SIZE = 9f;
+    private static final float ATIVIDADES_LINE_HEIGHT = 21.90f;
+    private static final float ATIVIDADES_FIRST_LINE_CENTER_OFFSET_Y = -0.95f;
+    private static final float DESEMPENHO_MARK_FONT_SIZE = 10.4f;
+    private static final float DESEMPENHO_MARK_OFFSET_Y = -0.4f;
 
     private record Slot(int pagina,
                         float dataMinX,
@@ -42,17 +48,18 @@ public class ReuniaoPdfService {
                         float atividadesY,
                         float atividadesMaxWidth,
                         int atividadesMaxLinhas,
+                        float atividadesLineHeight,
                         float desempenhoY,
                         float assinaturaY) {
     }
 
     private static final Map<Integer, Slot> SLOTS = Map.of(
-            1, new Slot(0, 103.6f, 203.6f, 666f, 244f, 684f, 297f, 6, 587f, 526f),
-            2, new Slot(0, 103.6f, 203.6f, 452f, 244f, 470f, 297f, 6, 373f, 309f),
-            3, new Slot(0, 103.6f, 203.6f, 235f, 244f, 253f, 297f, 6, 156f, 92f),
-            4, new Slot(1, 103.6f, 203.6f, 687f, 244f, 705f, 297f, 6, 608f, 547f),
-            5, new Slot(1, 103.6f, 203.6f, 473f, 244f, 491f, 297f, 6, 394f, 329f),
-            6, new Slot(1, 103.6f, 203.6f, 256f, 244f, 274f, 297f, 6, 177f, 112f)
+            1, new Slot(0, 103.6f, 203.6f, 666f, 244f, 684f, 297f, 4, ATIVIDADES_LINE_HEIGHT, 587f, 526f),
+            2, new Slot(0, 103.6f, 203.6f, 452f, 244f, 470f, 297f, 4, ATIVIDADES_LINE_HEIGHT, 373f, 309f),
+            3, new Slot(0, 103.6f, 203.6f, 235f, 244f, 253f, 297f, 4, ATIVIDADES_LINE_HEIGHT, 156f, 92f),
+            4, new Slot(1, 103.6f, 203.6f, 687f, 244f, 705f, 297f, 4, ATIVIDADES_LINE_HEIGHT, 608f, 547f),
+            5, new Slot(1, 103.6f, 203.6f, 473f, 244f, 491f, 297f, 4, ATIVIDADES_LINE_HEIGHT, 394f, 329f),
+            6, new Slot(1, 103.6f, 203.6f, 256f, 244f, 274f, 297f, 4, ATIVIDADES_LINE_HEIGHT, 177f, 112f)
     );
 
     private final ReuniaoService reuniaoService;
@@ -130,11 +137,12 @@ public class ReuniaoPdfService {
             desenharMultilinha(
                     stream,
                     FONT_TEXT,
-                    9f,
+                    ATIVIDADES_FONT_SIZE,
                     slot.atividadesX(),
                     slot.atividadesY(),
                     slot.atividadesMaxWidth(),
                     slot.atividadesMaxLinhas(),
+                    slot.atividadesLineHeight(),
                     reuniao.getAtividadesRealizadas()
             );
 
@@ -175,17 +183,24 @@ public class ReuniaoPdfService {
         if (desempenho == null) {
             return;
         }
-        float x;
+        float centerX;
         switch (desempenho) {
-            case RUIM -> x = 178f;
-            case REGULAR -> x = 263f;
-            case BOM -> x = 368f;
-            case OTIMO -> x = 472f;
+            case RUIM -> centerX = 181.13f;
+            case REGULAR -> centerX = 264.78f;
+            case BOM -> centerX = 370.16f;
+            case OTIMO -> centerX = 472.06f;
             default -> {
                 return;
             }
         }
-        desenharTexto(stream, FONT_BOLD, 11f, x, y, "X");
+        desenharTextoNoCentro(
+                stream,
+                FONT_BOLD,
+                DESEMPENHO_MARK_FONT_SIZE,
+                centerX,
+                y + DESEMPENHO_MARK_OFFSET_Y,
+                "X"
+        );
     }
 
     private void desenharDataEmBlocos(PDPageContentStream stream, Slot slot, java.time.LocalDate data)
@@ -245,16 +260,59 @@ public class ReuniaoPdfService {
                                     float yInicial,
                                     float maxWidth,
                                     int maxLinhas,
+                                    float lineHeight,
                                     String text) throws IOException {
         if (text == null || text.isBlank()) {
             return;
         }
         List<String> linhas = quebrarLinhas(font, fontSize, text.trim(), maxWidth, maxLinhas);
-        float y = yInicial;
+        float centerY = yInicial + ATIVIDADES_FIRST_LINE_CENTER_OFFSET_Y;
         for (String linha : linhas) {
-            desenharTexto(stream, font, fontSize, x, y, linha);
-            y -= (fontSize + 2.2f);
+            desenharTextoComCentroY(stream, font, fontSize, x, centerY, linha);
+            centerY -= lineHeight;
         }
+    }
+
+    private void desenharTextoComCentroY(PDPageContentStream stream,
+                                         PDFont font,
+                                         float fontSize,
+                                         float x,
+                                         float centerY,
+                                         String text) throws IOException {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        float ascent = 700f;
+        float descent = -200f;
+        PDFontDescriptor descriptor = font.getFontDescriptor();
+        if (descriptor != null) {
+            ascent = descriptor.getAscent();
+            descent = descriptor.getDescent();
+        }
+        float baseline = centerY - ((ascent + descent) / 2f) * (fontSize / 1000f);
+        desenharTexto(stream, font, fontSize, x, baseline, text);
+    }
+
+    private void desenharTextoNoCentro(PDPageContentStream stream,
+                                       PDFont font,
+                                       float fontSize,
+                                       float centerX,
+                                       float centerY,
+                                       String text) throws IOException {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        String ajustado = sanitizar(text);
+        float largura = larguraTexto(font, fontSize, ajustado);
+        float ascent = 700f;
+        float descent = -200f;
+        PDFontDescriptor descriptor = font.getFontDescriptor();
+        if (descriptor != null) {
+            ascent = descriptor.getAscent();
+            descent = descriptor.getDescent();
+        }
+        float baseline = centerY - ((ascent + descent) / 2f) * (fontSize / 1000f);
+        desenharTexto(stream, font, fontSize, centerX - (largura / 2f), baseline, ajustado);
     }
 
     private List<String> quebrarLinhas(PDFont font, float fontSize, String text, float maxWidth, int maxLinhas)

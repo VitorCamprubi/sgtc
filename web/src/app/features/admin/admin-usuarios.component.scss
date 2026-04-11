@@ -152,6 +152,12 @@
   margin: 0 0 0.75rem;
 }
 
+.role-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--sgtc-muted);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

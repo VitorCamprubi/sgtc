@@ -32,6 +32,7 @@ public class ComentarioService {
         DocumentoVersao d = docs.findById(docId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Documento nao encontrado"));
 
+        perms.assertGrupoEmCurso(d.getGrupo());
         perms.assertOrientadorOuCoorientadorDoGrupo(d.getGrupo().getId(), atual);
 
         DocumentoComentario c = new DocumentoComentario();
@@ -57,6 +58,7 @@ public class ComentarioService {
         DocumentoComentario c = repo.findById(comentarioId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario nao encontrado"));
 
+        perms.assertGrupoEmCurso(c.getDocumento().getGrupo());
         perms.assertPodeAcessarGrupo(c.getDocumento().getGrupo().getId(), atual);
         assertPodeAlterarOuExcluir(c, atual);
 
@@ -68,6 +70,7 @@ public class ComentarioService {
         DocumentoComentario c = repo.findById(comentarioId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario nao encontrado"));
 
+        perms.assertGrupoEmCurso(c.getDocumento().getGrupo());
         perms.assertPodeAcessarGrupo(c.getDocumento().getGrupo().getId(), atual);
         assertPodeAlterarOuExcluir(c, atual);
         repo.delete(c);

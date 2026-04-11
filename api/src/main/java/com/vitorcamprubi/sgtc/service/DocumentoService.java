@@ -52,6 +52,7 @@ public class DocumentoService {
         }
 
         Grupo g = perms.assertPodeAcessarGrupo(grupoId, atual);
+        perms.assertGrupoEmCurso(g);
         int next = docs.countByGrupoId(grupoId) + 1;
 
         Path dir = Paths.get(uploadDir, String.valueOf(grupoId)).toAbsolutePath().normalize();
@@ -157,6 +158,7 @@ public class DocumentoService {
 
     private void assertPodeAlterarOuExcluirDocumento(DocumentoVersao d, User atual) {
         Grupo g = d.getGrupo();
+        perms.assertGrupoEmCurso(g);
         boolean pode = atual.getRole() == Role.ADMIN
                 || perms.isOrientadorOuCoorientador(g, atual)
                 || (d.getEnviadoPor() != null && d.getEnviadoPor().getId().equals(atual.getId()));

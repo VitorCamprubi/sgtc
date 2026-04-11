@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { GrupoResumoDTO } from '../../model/grupo-resumo.dto';
 import { GrupoCreateRequest, GrupoService } from '../../services/grupo.service';
 import { Usuario, UsuariosService } from '../../services/usuarios.service';
@@ -18,11 +19,17 @@ export class GruposComponent implements OnInit {
   private usuariosApi = inject(UsuariosService);
 
   grupos = signal<GrupoResumoDTO[] | null>(null);
+  arquivosAprovados = signal<GrupoResumoDTO[] | null>(null);
+  arquivosReprovados = signal<GrupoResumoDTO[] | null>(null);
   error = signal<string | null>(null);
   isAdmin = signal<boolean>(false);
+  podeVerArquivos = signal<boolean>(false);
+  abaAtiva = signal<'grupos' | 'arquivos'>('grupos');
   professores = signal<Usuario[]>([]);
   deletando = signal<number | null>(null);
+  definindoNota = signal<number | null>(null);
   editandoGrupoId = signal<number | null>(null);
+  buscaArquivos = signal<string>('');
 
   novoTitulo = '';
   novaMateria: 'TG' | 'PTG' | null = null;
@@ -35,24 +42,65 @@ export class GruposComponent implements OnInit {
   editarCoorientadorId: number | null = null;
 
   ngOnInit(): void {
-    this.carregarMeus();
-
     this.usuariosApi.getUsuarioAtual().subscribe((u) => {
       const admin = u?.role === 'ADMIN';
       this.isAdmin.set(admin);
+      this.podeVerArquivos.set(u?.role === 'ADMIN' || u?.role === 'PROFESSOR');
       if (admin) {
         this.carregarProfessores();
       }
     });
+
+    this.carregarMeus();
   }
 
   carregarMeus(): void {
+    this.abaAtiva.set('grupos');
     this.error.set(null);
     this.grupos.set(null);
+    this.arquivosAprovados.set(null);
+    this.arquivosReprovados.set(null);
     this.gruposApi.listarMeus().subscribe({
       next: (data) => this.grupos.set(data),
-      error: (err) => this.error.set(`${err.status ?? ''} ${err.statusText ?? 'Erro'}`.trim()),
+      error: (err) => {
+        this.grupos.set([]);
+        this.error.set(`${err.status ?? ''} ${err.statusText ?? 'Erro'}`.trim());
+      },
     });
+  }
+
+  carregarArquivos(): void {
+    if (!this.podeVerArquivos()) return;
+    this.abaAtiva.set('arquivos');
+    this.cancelarEdicaoGrupo();
+    this.error.set(null);
+    this.grupos.set(null);
+    this.arquivosAprovados.set(null);
+    this.arquivosReprovados.set(null);
+
+    const busca = this.buscaArquivos().trim();
+    forkJoin({
+      aprovados: this.gruposApi.listarArquivosAprovados(busca),
+      reprovados: this.gruposApi.listarArquivosReprovados(busca),
+    }).subscribe({
+      next: ({ aprovados, reprovados }) => {
+        this.arquivosAprovados.set(aprovados);
+        this.arquivosReprovados.set(reprovados);
+      },
+      error: (err) => {
+        this.arquivosAprovados.set([]);
+        this.arquivosReprovados.set([]);
+        this.error.set(`${err.status ?? ''} ${err.statusText ?? 'Erro'}`.trim());
+      },
+    });
+  }
+
+  carregarAbaAtual(): void {
+    if (this.abaAtiva() === 'arquivos') {
+      this.carregarArquivos();
+      return;
+    }
+    this.carregarMeus();
   }
 
   excluirGrupo(id: number, titulo: string) {
@@ -71,6 +119,47 @@ export class GruposComponent implements OnInit {
         this.error.set(`${e.status} ${e.statusText}`);
       },
     });
+  }
+
+  definirNotaFinal(g: GrupoResumoDTO) {
+    if (!this.isAdmin() || this.abaAtiva() !== 'grupos') return;
+
+    const entrada = prompt(`Defina a nota final do grupo "${g.titulo}" (0 a 10):`, '6');
+    if (entrada === null) return;
+
+    const nota = this.parseNota(entrada);
+    if (nota === null || nota < 0 || nota > 10) {
+      this.error.set('Informe uma nota valida entre 0 e 10.');
+      return;
+    }
+
+    this.error.set(null);
+    this.definindoNota.set(g.id);
+    this.gruposApi.definirNotaFinal(g.id, nota).subscribe({
+      next: () => {
+        this.definindoNota.set(null);
+        this.carregarAbaAtual();
+      },
+      error: (e) => {
+        this.definindoNota.set(null);
+        this.error.set(`${e.status} ${e.statusText}`);
+      },
+    });
+  }
+
+  buscarNosArquivos(): void {
+    if (!this.podeVerArquivos()) return;
+    if (this.abaAtiva() !== 'arquivos') {
+      this.abaAtiva.set('arquivos');
+    }
+    this.carregarArquivos();
+  }
+
+  limparBuscaArquivos(): void {
+    this.buscaArquivos.set('');
+    if (this.abaAtiva() === 'arquivos') {
+      this.carregarArquivos();
+    }
   }
 
   criarGrupo(): void {
@@ -124,7 +213,7 @@ export class GruposComponent implements OnInit {
 
   salvarEdicaoGrupo(): void {
     const grupoId = this.editandoGrupoId();
-    if (!this.isAdmin() || !grupoId) return;
+    if (!this.isAdmin() || !grupoId || this.abaAtiva() !== 'grupos') return;
 
     const payload: GrupoCreateRequest = {
       titulo: this.editarTitulo.trim(),
@@ -147,10 +236,52 @@ export class GruposComponent implements OnInit {
     this.gruposApi.atualizar(grupoId, payload).subscribe({
       next: () => {
         this.cancelarEdicaoGrupo();
-        this.carregarMeus();
+        this.carregarAbaAtual();
       },
       error: (e) => this.error.set(`${e.status} ${e.statusText}`),
     });
+  }
+
+  statusGrupoLabel(status: GrupoResumoDTO['status']): string {
+    switch (status) {
+      case 'EM_CURSO':
+        return 'Em curso';
+      case 'APROVADO':
+        return 'Aprovado';
+      case 'REPROVADO':
+        return 'Reprovado';
+      default:
+        return status;
+    }
+  }
+
+  statusGrupoClass(status: GrupoResumoDTO['status']): string {
+    switch (status) {
+      case 'EM_CURSO':
+        return 'badge-status em-curso';
+      case 'APROVADO':
+        return 'badge-status aprovado';
+      case 'REPROVADO':
+        return 'badge-status reprovado';
+      default:
+        return 'badge-status';
+    }
+  }
+
+  totalArquivos(): number {
+    const aprovados = this.arquivosAprovados()?.length ?? 0;
+    const reprovados = this.arquivosReprovados()?.length ?? 0;
+    return aprovados + reprovados;
+  }
+
+  private parseNota(valor: string): number | null {
+    const normalizado = valor.replace(',', '.').trim();
+    if (!normalizado) return null;
+
+    const numero = Number(normalizado);
+    if (!Number.isFinite(numero)) return null;
+
+    return Math.round(numero * 100) / 100;
   }
 
   private carregarProfessores(): void {

@@ -17,14 +17,13 @@ import java.util.List;
 
 @Service
 public class ReuniaoService {
+    public static final int MAX_ATIVIDADES_REALIZADAS = 340;
+
     public record ExecucaoReuniaoDados(
-            Integer numeroEncontro,
             LocalDate dataAtividadesRealizadas,
             String atividadesRealizadas,
             ReuniaoDesempenhoGrupo desempenhoGrupo,
-            String professorDisciplina,
-            String orientadorAssinatura,
-            String coorientadorAssinatura
+            String professorDisciplina
     ) {
     }
 
@@ -47,6 +46,7 @@ public class ReuniaoService {
         }
 
         var g = perms.assertPodeAcessarGrupo(grupoId, atual);
+        perms.assertGrupoEmCurso(g);
 
         Reuniao r = new Reuniao();
         r.setGrupo(g);
@@ -88,6 +88,7 @@ public class ReuniaoService {
 
         Reuniao r = carregar(reuniaoId);
         atualizarStatusNaoRealizadaSeAtrasada(r, LocalDateTime.now());
+        perms.assertGrupoEmCurso(r.getGrupo());
         perms.assertOrientadorOuCoorientadorDoGrupo(r.getGrupo().getId(), atual);
         assertAberta(r);
 
@@ -101,25 +102,20 @@ public class ReuniaoService {
     public Reuniao concluir(Long reuniaoId, ExecucaoReuniaoDados dados, User atual) {
         Reuniao r = carregar(reuniaoId);
         atualizarStatusNaoRealizadaSeAtrasada(r, LocalDateTime.now());
+        perms.assertGrupoEmCurso(r.getGrupo());
         perms.assertOrientadorOuCoorientadorDoGrupo(r.getGrupo().getId(), atual);
         assertAberta(r);
         validarDadosExecucao(dados);
-
-        if (repo.existsByGrupoIdAndStatusAndNumeroEncontro(
-                r.getGrupo().getId(),
-                ReuniaoStatus.CONCLUIDA,
-                dados.numeroEncontro())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe reuniao executada para este encontro");
-        }
+        Integer numeroEncontro = proximoNumeroEncontro(r.getGrupo().getId());
 
         r.setStatus(ReuniaoStatus.CONCLUIDA);
-        r.setNumeroEncontro(dados.numeroEncontro());
+        r.setNumeroEncontro(numeroEncontro);
         r.setDataAtividadesRealizadas(dados.dataAtividadesRealizadas());
         r.setAtividadesRealizadas(dados.atividadesRealizadas().trim());
         r.setDesempenhoGrupo(dados.desempenhoGrupo());
         r.setProfessorDisciplina(dados.professorDisciplina().trim());
-        r.setOrientadorAssinatura(dados.orientadorAssinatura().trim());
-        r.setCoorientadorAssinatura(dados.coorientadorAssinatura().trim());
+        r.setOrientadorAssinatura(assinaturaDoUsuario(r.getGrupo().getOrientador()));
+        r.setCoorientadorAssinatura(assinaturaDoUsuario(r.getGrupo().getCoorientador()));
         r.setRelatorio(dados.atividadesRealizadas().trim());
         r.setEncerradaEm(LocalDateTime.now());
         return repo.save(r);
@@ -129,6 +125,7 @@ public class ReuniaoService {
     public Reuniao cancelar(Long reuniaoId, User atual) {
         Reuniao r = carregar(reuniaoId);
         atualizarStatusNaoRealizadaSeAtrasada(r, LocalDateTime.now());
+        perms.assertGrupoEmCurso(r.getGrupo());
         perms.assertOrientadorOuCoorientadorDoGrupo(r.getGrupo().getId(), atual);
         assertAberta(r);
 
@@ -239,14 +236,17 @@ public class ReuniaoService {
         if (dados == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dados de execucao sao obrigatorios");
         }
-        if (dados.numeroEncontro() == null || dados.numeroEncontro() < 1 || dados.numeroEncontro() > 6) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero do encontro deve estar entre 1 e 6");
-        }
         if (dados.dataAtividadesRealizadas() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data das atividades eh obrigatoria");
         }
         if (dados.atividadesRealizadas() == null || dados.atividadesRealizadas().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Atividades realizadas sao obrigatorias");
+        }
+        if (dados.atividadesRealizadas().trim().length() > MAX_ATIVIDADES_REALIZADAS) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Atividades realizadas ultrapassam o limite de " + MAX_ATIVIDADES_REALIZADAS + " caracteres"
+            );
         }
         if (dados.desempenhoGrupo() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Desempenho do grupo eh obrigatorio");
@@ -254,11 +254,32 @@ public class ReuniaoService {
         if (dados.professorDisciplina() == null || dados.professorDisciplina().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Professor da disciplina eh obrigatorio");
         }
-        if (dados.orientadorAssinatura() == null || dados.orientadorAssinatura().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Orientador eh obrigatorio");
+    }
+
+    private Integer proximoNumeroEncontro(Long grupoId) {
+        List<Reuniao> concluidas = repo.findByGrupoIdAndStatusOrderByNumeroEncontroAscEncerradaEmAsc(
+                grupoId,
+                ReuniaoStatus.CONCLUIDA
+        );
+        boolean[] usados = new boolean[7];
+        for (Reuniao reuniao : concluidas) {
+            Integer encontro = reuniao.getNumeroEncontro();
+            if (encontro != null && encontro >= 1 && encontro <= 6) {
+                usados[encontro] = true;
+            }
         }
-        if (dados.coorientadorAssinatura() == null || dados.coorientadorAssinatura().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Coorientador eh obrigatorio");
+        for (int encontro = 1; encontro <= 6; encontro += 1) {
+            if (!usados[encontro]) {
+                return encontro;
+            }
         }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Todos os encontros de 1 a 6 ja foram utilizados");
+    }
+
+    private String assinaturaDoUsuario(User usuario) {
+        if (usuario == null || usuario.getNome() == null || usuario.getNome().isBlank()) {
+            return null;
+        }
+        return usuario.getNome().trim();
     }
 }
