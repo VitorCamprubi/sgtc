@@ -4,8 +4,11 @@ import com.vitorcamprubi.sgtc.domain.Reuniao;
 import com.vitorcamprubi.sgtc.domain.ReuniaoDesempenhoGrupo;
 import com.vitorcamprubi.sgtc.domain.ReuniaoStatus;
 import com.vitorcamprubi.sgtc.domain.User;
+<<<<<<< HEAD
 import com.vitorcamprubi.sgtc.notification.EmailService;
 import com.vitorcamprubi.sgtc.repo.GrupoAlunoRepository;
+=======
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 import com.vitorcamprubi.sgtc.repo.ReuniaoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,10 +18,14 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.ArrayList;
+<<<<<<< HEAD
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+=======
+import java.util.List;
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 
 @Service
 public class ReuniaoService {
@@ -34,6 +41,7 @@ public class ReuniaoService {
 
     private final ReuniaoRepository repo;
     private final PermissaoService perms;
+<<<<<<< HEAD
     private final EmailService emailService;
     private final GrupoAlunoRepository grupoAlunos;
 
@@ -43,6 +51,12 @@ public class ReuniaoService {
         this.perms = perms;
         this.emailService = emailService;
         this.grupoAlunos = grupoAlunos;
+=======
+
+    public ReuniaoService(ReuniaoRepository repo, PermissaoService perms) {
+        this.repo = repo;
+        this.perms = perms;
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     @Transactional
@@ -66,6 +80,7 @@ public class ReuniaoService {
         r.setStatus(ReuniaoStatus.AGUARDANDO_DATA_REUNIAO);
         limparDadosExecucao(r);
         r.setCriadoPor(atual);
+<<<<<<< HEAD
         // Token de confirmacao (links no e-mail do professor)
         r.setTokenConfirmacao(UUID.randomUUID().toString());
         r.setConfirmadaPeloProfessor(null);
@@ -136,6 +151,9 @@ public class ReuniaoService {
             // best-effort
         }
         return salva;
+=======
+        return repo.save(r);
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     @Transactional

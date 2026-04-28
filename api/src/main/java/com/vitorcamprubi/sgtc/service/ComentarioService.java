@@ -4,10 +4,15 @@ import com.vitorcamprubi.sgtc.domain.DocumentoComentario;
 import com.vitorcamprubi.sgtc.domain.DocumentoVersao;
 import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
+<<<<<<< HEAD
 import com.vitorcamprubi.sgtc.notification.EmailService;
 import com.vitorcamprubi.sgtc.repo.DocumentoComentarioRepository;
 import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
 import com.vitorcamprubi.sgtc.repo.GrupoAlunoRepository;
+=======
+import com.vitorcamprubi.sgtc.repo.DocumentoComentarioRepository;
+import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,6 +24,7 @@ public class ComentarioService {
     private final DocumentoVersaoRepository docs;
     private final DocumentoComentarioRepository repo;
     private final PermissaoService perms;
+<<<<<<< HEAD
     private final EmailService emailService;
     private final GrupoAlunoRepository grupoAlunos;
 
@@ -30,6 +36,13 @@ public class ComentarioService {
         this.perms = perms;
         this.emailService = emailService;
         this.grupoAlunos = grupoAlunos;
+=======
+
+    public ComentarioService(DocumentoVersaoRepository docs, DocumentoComentarioRepository repo, PermissaoService perms) {
+        this.docs = docs;
+        this.repo = repo;
+        this.perms = perms;
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     public DocumentoComentario comentar(Long docId, String texto, User atual) {
@@ -47,6 +60,7 @@ public class ComentarioService {
         c.setDocumento(d);
         c.setAutor(atual);
         c.setTexto(texto.trim());
+<<<<<<< HEAD
         DocumentoComentario salvo = repo.save(c);
 
         // Notifica todos os alunos do grupo quando o autor for professor/admin
@@ -60,6 +74,9 @@ public class ComentarioService {
             }
         }
         return salvo;
+=======
+        return repo.save(c);
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     public List<DocumentoComentario> listar(Long docId, User atual) {

@@ -1,6 +1,7 @@
 package com.vitorcamprubi.sgtc.web.auth;
 
 import com.vitorcamprubi.sgtc.domain.User;
+<<<<<<< HEAD
 import com.vitorcamprubi.sgtc.repo.UserRepository;
 import com.vitorcamprubi.sgtc.security.AuthService;
 import com.vitorcamprubi.sgtc.security.JwtService;
@@ -9,6 +10,12 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+=======
+import com.vitorcamprubi.sgtc.security.AuthService;
+import com.vitorcamprubi.sgtc.security.JwtService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,10 +24,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+<<<<<<< HEAD
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+=======
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -28,6 +38,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final AuthService authService;
+<<<<<<< HEAD
     private final UserAdminService userAdminService;
     private final UserRepository userRepository;
 
@@ -42,16 +53,26 @@ public class AuthController {
         this.authService = authService;
         this.userAdminService = userAdminService;
         this.userRepository = userRepository;
+=======
+
+    public AuthController(AuthenticationManager authenticationManager, JwtService jwtService, AuthService authService) {
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
+        this.authService = authService;
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     @PostMapping("/login")
     public LoginResponse login(@RequestBody @Valid LoginRequest request) {
+<<<<<<< HEAD
         // Bloqueia login se o e-mail ainda nao foi confirmado
         User u = userRepository.findByEmail(request.getEmail()).orElse(null);
         if (u != null && !u.isEmailConfirmado()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "E-mail nao confirmado. Verifique sua caixa de entrada ou solicite o reenvio.");
         }
+=======
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getSenha())
@@ -69,6 +90,7 @@ public class AuthController {
         User user = authService.getCurrentUser();
         return new UserInfoResponse(user.getId(), user.getNome(), user.getEmail(), user.getRole(), user.getRa());
     }
+<<<<<<< HEAD
 
     /**
      * Endpoint publico chamado pelo link enviado por e-mail.
@@ -115,4 +137,6 @@ public class AuthController {
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
     }
+=======
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 }

@@ -4,7 +4,10 @@ import com.vitorcamprubi.sgtc.domain.DocumentoVersao;
 import com.vitorcamprubi.sgtc.domain.Grupo;
 import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
+<<<<<<< HEAD
 import com.vitorcamprubi.sgtc.notification.EmailService;
+=======
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 import com.vitorcamprubi.sgtc.repo.DocumentoComentarioRepository;
 import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,10 +26,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+=======
+import java.util.List;
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 import java.util.regex.Pattern;
 
 @Service
@@ -39,6 +46,7 @@ public class DocumentoService {
     private final DocumentoVersaoRepository docs;
     private final DocumentoComentarioRepository comentarios;
     private final PermissaoService perms;
+<<<<<<< HEAD
     private final EmailService emailService;
 
     public DocumentoService(DocumentoVersaoRepository docs, DocumentoComentarioRepository comentarios,
@@ -47,6 +55,13 @@ public class DocumentoService {
         this.comentarios = comentarios;
         this.perms = perms;
         this.emailService = emailService;
+=======
+
+    public DocumentoService(DocumentoVersaoRepository docs, DocumentoComentarioRepository comentarios, PermissaoService perms) {
+        this.docs = docs;
+        this.comentarios = comentarios;
+        this.perms = perms;
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     @Transactional
@@ -93,6 +108,7 @@ public class DocumentoService {
         d.setMimeType(mimeType);
         d.setTamanho(Files.size(dest));
         d.setEnviadoPor(atual);
+<<<<<<< HEAD
         DocumentoVersao salvo = docs.save(d);
 
         // Notifica orientador e coorientador quando o upload foi feito por aluno
@@ -119,6 +135,9 @@ public class DocumentoService {
             destinatarios.add(g.getCoorientador());
         }
         return destinatarios;
+=======
+        return docs.save(d);
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     public List<DocumentoVersao> listar(Long grupoId, User atual) {

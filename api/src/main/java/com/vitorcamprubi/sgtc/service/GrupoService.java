@@ -7,7 +7,10 @@ import com.vitorcamprubi.sgtc.domain.GrupoStatus;
 import com.vitorcamprubi.sgtc.domain.Materia;
 import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
+<<<<<<< HEAD
 import com.vitorcamprubi.sgtc.notification.EmailService;
+=======
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
 import com.vitorcamprubi.sgtc.repo.GrupoAlunoRepository;
 import com.vitorcamprubi.sgtc.repo.GrupoRepository;
@@ -45,12 +48,19 @@ public class GrupoService {
     private final ReuniaoRepository reunioes;
     private final DocumentoService documentoService;
     private final PermissaoService perms;
+<<<<<<< HEAD
     private final EmailService emailService;
 
     public GrupoService(GrupoRepository grupos, UserRepository users, GrupoAlunoRepository grupoAlunos,
                         DocumentoVersaoRepository documentos, ReuniaoRepository reunioes,
                         DocumentoService documentoService, PermissaoService perms,
                         EmailService emailService) {
+=======
+
+    public GrupoService(GrupoRepository grupos, UserRepository users, GrupoAlunoRepository grupoAlunos,
+                        DocumentoVersaoRepository documentos, ReuniaoRepository reunioes,
+                        DocumentoService documentoService, PermissaoService perms) {
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
         this.grupos = grupos;
         this.users = users;
         this.grupoAlunos = grupoAlunos;
@@ -58,7 +68,10 @@ public class GrupoService {
         this.reunioes = reunioes;
         this.documentoService = documentoService;
         this.perms = perms;
+<<<<<<< HEAD
         this.emailService = emailService;
+=======
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     @Transactional
@@ -255,6 +268,7 @@ public class GrupoService {
             grupoAlunos.saveAll(membros);
         }
 
+<<<<<<< HEAD
         // Notifica todos os alunos do grupo sobre a nota final
         try {
             List<User> alunosVerificados = grupoAlunos.findAlunosByGrupoId(grupoId).stream()
@@ -266,6 +280,8 @@ public class GrupoService {
             // best-effort
         }
 
+=======
+>>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
         return toResumo(grupo);
     }
 
