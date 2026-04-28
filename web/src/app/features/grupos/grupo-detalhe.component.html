@@ -1,0 +1,391 @@
+<section class="detalhe-page">
+  <header class="detalhe-header">
+    <div>
+      <h2>{{ grupoTitulo() || ('Grupo ' + grupoId) }}</h2>
+      <p class="section-subtitle">Gerencie documentos, comentarios, reunioes e membros do grupo.</p>
+      @if (grupoArquivado()) {
+        <p class="status-locked">Grupo arquivado. Alteracoes estao bloqueadas.</p>
+      }
+    </div>
+    <button type="button" class="ghost-small" (click)="atualizarPainel()">Atualizar painel</button>
+  </header>
+
+  <nav class="group-tabs" aria-label="Secoes do grupo">
+    <a [routerLink]="['/grupos', grupoId, 'documentos']" [class.active]="abaAtiva() === 'documentos'">
+      Documentos
+    </a>
+    <a [routerLink]="['/grupos', grupoId, 'reunioes']" [class.active]="abaAtiva() === 'reunioes'">
+      Reunioes
+    </a>
+    <a [routerLink]="['/grupos', grupoId, 'membros']" [class.active]="abaAtiva() === 'membros'">
+      Membros do grupo
+    </a>
+  </nav>
+
+  @if (error()) {
+    <p class="error-banner">Erro: {{ error() }}</p>
+  }
+
+  @if (abaAtiva() === 'documentos') {
+    <section class="card-block">
+      <div class="block-header">
+        <h3>Documentos</h3>
+        <p class="block-subtitle">Envie novos arquivos e gerencie versoes existentes.</p>
+      </div>
+
+      <div class="upload-grid">
+        <input type="text" placeholder="Titulo do documento" [(ngModel)]="tituloDocumento" />
+        <input #fileInput type="file" (change)="onFileSelected($event)" />
+        <button (click)="uploadFromState(fileInput)" [disabled]="!canUploadDocumento() || !tituloDocumento.trim() || !arquivoSelecionado">Enviar</button>
+      </div>
+
+      <div class="table-shell">
+        @if (lista() === null) {
+          <p class="state-info pad">Carregando...</p>
+        } @else if (lista()?.length === 0) {
+          <p class="state-info pad">Nenhum documento enviado.</p>
+        } @else {
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Titulo</th>
+                <th>Versao</th>
+                <th>Enviado por</th>
+                <th>Criado</th>
+                <th>Tamanho</th>
+                <th>Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of lista(); track d.id) {
+                <tr>
+                  <td>{{ d.id }}</td>
+                  <td>
+                    @if (editandoDocumentoId() === d.id) {
+                      <div class="inline-edit">
+                        <input type="text" [(ngModel)]="tituloDocumentoEditando" />
+                        <button type="button" (click)="salvarEdicaoDocumento(d)">Salvar</button>
+                        <button type="button" class="ghost-small" (click)="cancelarEdicaoDocumento()">Cancelar</button>
+                      </div>
+                    } @else {
+                      {{ d.titulo }}
+                    }
+                  </td>
+                  <td>{{ d.versao }}</td>
+                  <td>{{ d.enviadoPor }}</td>
+                  <td>{{ d.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ d.tamanho }}</td>
+                  <td>
+                    <div class="actions-inline">
+                      @if (canDelete(d)) {
+                        <button type="button" class="ghost-small" (click)="iniciarEdicaoDocumento(d)">Editar</button>
+                      }
+                      <button class="btn-act-table" (click)="onDownload(d)" [disabled]="baixando() === d.id">
+                        <fa-icon [icon]="faDownload" class="btn-icon"></fa-icon>
+                      </button>
+                      <button class="btn-act-table" (click)="selecionarDoc(d)">
+                        <fa-icon [icon]="faComments" class="btn-icon"></fa-icon>
+                      </button>
+                      @if (canDelete(d)) {
+                        <button class="btn-act-table del" (click)="excluir(d)">
+                          <fa-icon [icon]="faTrashCan" class="btn-icon"></fa-icon>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </section>
+
+    <section class="card-block">
+      <div class="block-header">
+        <h3>Comentarios</h3>
+        @if (!docSelecionado()) {
+          <p class="block-subtitle">Selecione um documento na tabela acima para ver ou enviar comentarios.</p>
+        } @else {
+          <p class="block-subtitle">Documento selecionado: {{ docSelecionado()?.titulo }} v{{ docSelecionado()?.versao }}</p>
+        }
+      </div>
+
+      @if (docSelecionado()) {
+        @if (canComment()) {
+          <div class="comentario-input">
+            <textarea [(ngModel)]="novoComentario" placeholder="Novo comentario" rows="4"></textarea>
+            <button (click)="enviarComentario()" [disabled]="!novoComentario.trim()">Enviar comentario</button>
+          </div>
+        }
+
+        @if (comentariosDoc() === null) {
+          <p class="state-info">Carregando comentarios...</p>
+        } @else if (comentariosDoc()?.length === 0) {
+          <p class="state-info">Nenhum comentario.</p>
+        } @else {
+          <ul class="comments-list">
+            @for (c of comentariosDoc()?.slice()?.reverse(); track c.id) {
+              <li class="comment-card">
+                <div class="comment-meta">
+                  <strong>{{ c.autor }}</strong>
+                  <small>{{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}</small>
+                </div>
+                @if (editandoComentarioId() === c.id) {
+                  <div class="comentario-input">
+                    <textarea [(ngModel)]="textoComentarioEditando" rows="3"></textarea>
+                    <div class="inline-actions">
+                      <button (click)="salvarEdicaoComentario(c)" [disabled]="!textoComentarioEditando.trim()">Salvar</button>
+                      <button type="button" class="ghost-small" (click)="cancelarEdicaoComentario()">Cancelar</button>
+                    </div>
+                  </div>
+                } @else {
+                  <p class="comment-text">{{ c.texto }}</p>
+                  @if (podeGerenciarComentario(c)) {
+                    <div class="inline-actions">
+                      <button type="button" class="ghost-small" (click)="iniciarEdicaoComentario(c)">Editar</button>
+                      <button type="button" class="ghost-small danger" (click)="excluirComentario(c)">Excluir</button>
+                    </div>
+                  }
+                }
+              </li>
+            }
+          </ul>
+        }
+      }
+    </section>
+  }
+
+  @if (abaAtiva() === 'reunioes') {
+    <section class="card-block">
+      <div class="block-header">
+        <h3>Reunioes</h3>
+        <p class="block-subtitle">Acompanhe a agenda e historico de reunioes do grupo.</p>
+        <button type="button" class="ghost-small" [disabled]="gerandoPdf()" (click)="gerarPdfReunioes()">
+          {{ gerandoPdf() ? 'Gerando PDF...' : 'Gerar PDF' }}
+        </button>
+      </div>
+
+      @if (canCreateReuniao()) {
+        <div class="form-reuniao">
+          <input type="datetime-local" [(ngModel)]="novaDataHora" />
+          <input placeholder="Pauta" [(ngModel)]="novaPauta" />
+          <input placeholder="Observacoes" [(ngModel)]="novasObs" />
+          <button (click)="agendarReuniao()">Agendar</button>
+        </div>
+      }
+
+      <div class="table-shell">
+        @if (listaReunioes() === null) {
+          <p class="state-info pad">Carregando...</p>
+        } @else if (listaReunioes()?.length === 0) {
+          <p class="state-info pad">Nenhuma reuniao.</p>
+        } @else {
+          <p class="table-title">Agenda aberta</p>
+          @if (reunioesAbertas().length === 0) {
+            <p class="state-info pad">Nenhuma reuniao em aberto.</p>
+          } @else {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Pauta</th>
+                  <th>Observacoes</th>
+                  <th>Status</th>
+                  <th>Criado por</th>
+                  @if (canManageReunioes()) { <th>Acoes</th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of reunioesAbertas(); track r.id) {
+                  <tr>
+                    @if (editandoReuniaoId() === r.id) {
+                      <td><input type="datetime-local" [(ngModel)]="editarDataHora" /></td>
+                      <td><input type="text" [(ngModel)]="editarPauta" /></td>
+                      <td><input type="text" [(ngModel)]="editarObservacoes" /></td>
+                    } @else {
+                      <td>{{ r.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{ r.pauta }}</td>
+                      <td>{{ r.observacoes || '-' }}</td>
+                    }
+                    <td><span [class]="statusReuniaoClass(r.status)">{{ statusReuniaoLabel(r.status) }}</span></td>
+                    <td>{{ r.criadoPor }}</td>
+                    @if (canManageReunioes()) {
+                      <td>
+                        @if (editandoReuniaoId() === r.id) {
+                          <div class="inline-actions">
+                            <button type="button" (click)="salvarEdicaoReuniao()">Salvar</button>
+                            <button type="button" class="ghost-small" (click)="cancelarEdicaoReuniao()">Cancelar</button>
+                          </div>
+                        } @else if (concluindoReuniaoId() === r.id) {
+                          <div class="inline-actions">
+                            <button type="button" class="ghost-small" (click)="cancelarConclusaoReuniao()">Cancelar conclusao</button>
+                            <button type="button" class="ghost-small danger" (click)="cancelarReuniao(r)">Cancelar reuniao</button>
+                          </div>
+                        } @else {
+                          <div class="inline-actions">
+                            <button type="button" class="ghost-small" (click)="iniciarEdicaoReuniao(r)">Remarcar</button>
+                            <button type="button" class="ghost-small" (click)="iniciarConclusaoReuniao(r)">Executada</button>
+                            <button type="button" class="ghost-small danger" (click)="cancelarReuniao(r)">Cancelar</button>
+                          </div>
+                        }
+                      </td>
+                    }
+                  </tr>
+                  @if (concluindoReuniaoId() === r.id) {
+                    <tr class="row-expand">
+                      <td [attr.colspan]="canManageReunioes() ? 6 : 5">
+                        <div class="conclusao-box">
+                          <label for="data-atividades-reuniao-{{ r.id }}">Data das atividades</label>
+                          <input id="data-atividades-reuniao-{{ r.id }}"
+                                 type="date"
+                                 [(ngModel)]="execucaoDataAtividades" />
+
+                          <label for="atividades-reuniao-{{ r.id }}">Atividades realizadas (obrigatorio)</label>
+                          <textarea id="atividades-reuniao-{{ r.id }}"
+                                    rows="4"
+                                    placeholder="Descreva as atividades realizadas no encontro."
+                                    [attr.maxlength]="maxAtividadesRealizadas"
+                                    [(ngModel)]="execucaoAtividadesRealizadas"></textarea>
+                          <p class="char-counter"
+                             [class.limit]="execucaoAtividadesRealizadas.length >= maxAtividadesRealizadas">
+                            {{ execucaoAtividadesRealizadas.length }} / {{ maxAtividadesRealizadas }} caracteres
+                          </p>
+
+                          <label for="desempenho-reuniao-{{ r.id }}">Desempenho do grupo</label>
+                          <select id="desempenho-reuniao-{{ r.id }}" [(ngModel)]="execucaoDesempenho">
+                            <option value="">Selecione</option>
+                            <option value="RUIM">Ruim</option>
+                            <option value="REGULAR">Regular</option>
+                            <option value="BOM">Bom</option>
+                            <option value="OTIMO">Otimo</option>
+                          </select>
+
+                          <label for="prof-disciplina-reuniao-{{ r.id }}">Prof. Disciplina</label>
+                          <input id="prof-disciplina-reuniao-{{ r.id }}"
+                                 type="text"
+                                 [(ngModel)]="execucaoProfessorDisciplina" />
+                          <div class="inline-actions">
+                            <button type="button"
+                                    (click)="concluirReuniao(r)"
+                                    [disabled]="!execucaoDataAtividades || !execucaoAtividadesRealizadas.trim() || !execucaoDesempenho || !execucaoProfessorDisciplina.trim()">
+                              Marcar como executada
+                            </button>
+                            <button type="button" class="ghost-small" (click)="cancelarConclusaoReuniao()">Cancelar</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          }
+        }
+      </div>
+
+      <div class="table-shell historico-shell">
+        @if (listaReunioes() !== null) {
+          <p class="table-title">Historico de reunioes fechadas</p>
+        }
+        @if (listaReunioes() === null) {
+          <p class="state-info pad">Carregando...</p>
+        } @else if (historicoReunioes().length === 0) {
+          <p class="state-info pad">Nenhuma reuniao no historico.</p>
+        } @else {
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Encontro</th>
+                <th>Data realizada</th>
+                <th>Status</th>
+                <th>Desempenho</th>
+                <th>Relatorio</th>
+                <th>Prof. Disciplina</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of historicoReunioes(); track r.id) {
+                <tr>
+                  <td>{{ r.numeroEncontro || '-' }}</td>
+                  <td>{{ r.dataAtividadesRealizadas ? (r.dataAtividadesRealizadas | date:'dd/MM/yyyy') : '-' }}</td>
+                  <td><span [class]="statusReuniaoClass(r.status)">{{ statusReuniaoLabel(r.status) }}</span></td>
+                  <td>{{ desempenhoLabel(r.desempenhoGrupo) }}</td>
+                  <td>{{ r.relatorio || r.atividadesRealizadas || '-' }}</td>
+                  <td>{{ r.professorDisciplina || '-' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </section>
+  }
+
+  @if (abaAtiva() === 'membros') {
+    <div class="bottom-grid">
+      <section class="card-block">
+        <div class="block-header">
+          <h3>Membros do grupo</h3>
+        </div>
+        @if (membrosGrupo() === null) {
+          <p class="state-info">Carregando membros...</p>
+        } @else if (membrosGrupo()?.length === 0) {
+          <p class="state-info">Nenhum membro adicionado.</p>
+        } @else {
+          <ul class="lista-membros">
+            @for (m of membrosGrupo(); track m.id) {
+              <li>
+                <div>
+                  <strong>{{ m.nome }}</strong>
+                  <span>{{ m.email }}</span>
+                </div>
+                @if (canManageMembros()) {
+                  <button type="button"
+                          class="ghost-small danger"
+                          [disabled]="removendoMembroId() === m.id"
+                          (click)="removerMembro(m)">
+                    {{ removendoMembroId() === m.id ? 'Removendo...' : 'Remover' }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      @if (canManageMembros()) {
+        <section class="card-block">
+          <div class="block-header">
+            <h3>Admin - Adicionar membros</h3>
+            <p class="block-subtitle">Selecione um ou mais alunos para incluir no grupo.</p>
+          </div>
+          <div class="membros-search">
+            <input type="search"
+                   placeholder="Buscar aluno por nome ou email"
+                   [ngModel]="buscaAluno()"
+                   (ngModelChange)="buscaAluno.set($event)" />
+            <span>{{ membrosSelecionados().length }} selecionado(s)</span>
+          </div>
+          <select class="membros-select" multiple size="8" (change)="onMembrosChange($event)">
+            @if (alunosDisponiveis().length === 0) {
+              <option disabled>Todos os alunos ja fazem parte do grupo.</option>
+            } @else if (alunosDisponiveisFiltrados().length === 0) {
+              <option disabled>Nenhum aluno encontrado para "{{ buscaAluno() }}".</option>
+            } @else {
+              @for (a of alunosDisponiveisFiltrados(); track a.id) {
+                <option [value]="a.id" [selected]="membrosSelecionados().includes(a.id)">
+                  {{ a.nome }} ({{ a.email }})
+                </option>
+              }
+            }
+          </select>
+          <div class="admin-membros-acoes">
+            <button (click)="adicionarMembros()" [disabled]="membrosSelecionados().length === 0">Adicionar</button>
+          </div>
+        </section>
+      }
+    </div>
+  }
+</section>
