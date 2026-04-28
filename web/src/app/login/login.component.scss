@@ -67,6 +67,51 @@ button {
   font-weight: 500;
 }
 
+.info-message {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  background: rgba(46, 125, 50, 0.08);
+  color: #1b5e20;
+  border: 1px solid rgba(46, 125, 50, 0.25);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.resend-box {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.resend-btn {
+  background: transparent;
+  border: 1px solid var(--sgtc-accent);
+  color: var(--sgtc-accent);
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.resend-btn:hover:not([disabled]) {
+  background: var(--sgtc-accent);
+  color: #fff;
+}
+
+.resend-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.resend-message {
+  margin: 0;
+  color: var(--sgtc-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 .support-email {
   display: inline-block;
   margin-top: 2.25rem;

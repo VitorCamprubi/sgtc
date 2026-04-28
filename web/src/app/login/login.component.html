@@ -9,6 +9,8 @@
       Ribeiro de Camargo
     </p>
 
+    <p *ngIf="info" class="info-message" role="status">{{ info }}</p>
+
     <form (ngSubmit)="submit()" autocomplete="on" novalidate>
       <label class="sr-only" for="email">E-mail</label>
       <input
@@ -32,8 +34,23 @@
         required
       />
 
-      <button type="submit">Login</button>
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Entrando...' : 'Login' }}
+      </button>
+
       <p *ngIf="error" class="error-message" role="alert">{{ error }}</p>
+
+      <div *ngIf="showResend" class="resend-box">
+        <button
+          type="button"
+          class="resend-btn"
+          (click)="reenviarConfirmacao()"
+          [disabled]="resending"
+        >
+          {{ resending ? 'Enviando...' : 'Reenviar confirmacao' }}
+        </button>
+        <p *ngIf="resendingMessage" class="resend-message">{{ resendingMessage }}</p>
+      </div>
     </form>
 
   </div>
