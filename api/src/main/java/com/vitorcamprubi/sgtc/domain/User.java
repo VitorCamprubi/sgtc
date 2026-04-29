@@ -2,11 +2,8 @@ package com.vitorcamprubi.sgtc.domain;
 
 import jakarta.persistence.*;
 
-<<<<<<< HEAD
 import java.time.LocalDateTime;
 
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 @Entity
 @Table(name = "users")
 public class User {
@@ -29,7 +26,6 @@ public class User {
     @Column(unique = true)
     private String ra; // opcional (só p/ alunos)
 
-<<<<<<< HEAD
     // === Verificação de e-mail ===
     @Column(name = "email_confirmado", nullable = false, columnDefinition = "boolean default false")
     private boolean emailConfirmado = false;
@@ -40,8 +36,6 @@ public class User {
     @Column(name = "token_confirmacao_expira_em")
     private LocalDateTime tokenConfirmacaoExpiraEm;
 
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     // getters/setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -55,7 +49,6 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public String getRa() { return ra; }
     public void setRa(String ra) { this.ra = ra; }
-<<<<<<< HEAD
     public boolean isEmailConfirmado() { return emailConfirmado; }
     public void setEmailConfirmado(boolean emailConfirmado) { this.emailConfirmado = emailConfirmado; }
     public String getTokenConfirmacao() { return tokenConfirmacao; }
@@ -64,6 +57,4 @@ public class User {
     public void setTokenConfirmacaoExpiraEm(LocalDateTime tokenConfirmacaoExpiraEm) {
         this.tokenConfirmacaoExpiraEm = tokenConfirmacaoExpiraEm;
     }
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 }

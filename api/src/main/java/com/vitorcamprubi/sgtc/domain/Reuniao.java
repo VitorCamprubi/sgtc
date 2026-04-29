@@ -62,7 +62,6 @@ public class Reuniao {
     @Column(nullable=false, updatable=false, name="created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-<<<<<<< HEAD
     // === Confirmacao via e-mail pelo professor ===
     // null = pendente; true = confirmada; false = recusada
     @Column(name = "confirmada_pelo_professor")
@@ -74,8 +73,6 @@ public class Reuniao {
     @Column(name = "respondida_em")
     private LocalDateTime respondidaEm;
 
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     public Long getId() { return id; }
     public Grupo getGrupo() { return grupo; }
     public void setGrupo(Grupo grupo) { this.grupo = grupo; }
@@ -109,7 +106,6 @@ public class Reuniao {
     public void setCriadoPor(User criadoPor) { this.criadoPor = criadoPor; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-<<<<<<< HEAD
     public Boolean getConfirmadaPeloProfessor() { return confirmadaPeloProfessor; }
     public void setConfirmadaPeloProfessor(Boolean confirmadaPeloProfessor) {
         this.confirmadaPeloProfessor = confirmadaPeloProfessor;
@@ -118,6 +114,4 @@ public class Reuniao {
     public void setTokenConfirmacao(String tokenConfirmacao) { this.tokenConfirmacao = tokenConfirmacao; }
     public LocalDateTime getRespondidaEm() { return respondidaEm; }
     public void setRespondidaEm(LocalDateTime respondidaEm) { this.respondidaEm = respondidaEm; }
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 }
