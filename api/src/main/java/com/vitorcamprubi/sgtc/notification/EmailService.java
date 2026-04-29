@@ -38,7 +38,7 @@ import java.util.Locale;
 public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern(
-            "dd/MM/yyyy 'as' HH:mm", new Locale("pt", "BR"));
+            "dd/MM/yyyy 'as' HH:mm", Locale.of("pt", "BR"));
 
     private final JavaMailSender mailSender;
 

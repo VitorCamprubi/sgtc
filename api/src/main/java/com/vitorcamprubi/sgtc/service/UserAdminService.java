@@ -2,10 +2,7 @@ package com.vitorcamprubi.sgtc.service;
 
 import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
-<<<<<<< HEAD
 import com.vitorcamprubi.sgtc.notification.EmailService;
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 import com.vitorcamprubi.sgtc.repo.DocumentoComentarioRepository;
 import com.vitorcamprubi.sgtc.repo.DocumentoVersaoRepository;
 import com.vitorcamprubi.sgtc.repo.GrupoAlunoRepository;
@@ -20,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-<<<<<<< HEAD
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,13 +24,6 @@ import java.util.UUID;
 @Service
 public class UserAdminService {
     private static final int VERIFICATION_TOKEN_TTL_HOURS = 48;
-
-=======
-import java.util.List;
-
-@Service
-public class UserAdminService {
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     private final UserRepository users;
     private final PasswordEncoder enc;
     private final GrupoRepository grupos;
@@ -42,19 +31,12 @@ public class UserAdminService {
     private final DocumentoVersaoRepository docs;
     private final DocumentoComentarioRepository comentarios;
     private final ReuniaoRepository reunioes;
-<<<<<<< HEAD
     private final EmailService emailService;
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 
     public UserAdminService(UserRepository users, PasswordEncoder enc,
                             GrupoRepository grupos, GrupoAlunoRepository grupoAlunos,
                             DocumentoVersaoRepository docs, DocumentoComentarioRepository comentarios,
-<<<<<<< HEAD
                             ReuniaoRepository reunioes, EmailService emailService) {
-=======
-                            ReuniaoRepository reunioes) {
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
         this.users = users;
         this.enc = enc;
         this.grupos = grupos;
@@ -62,10 +44,7 @@ public class UserAdminService {
         this.docs = docs;
         this.comentarios = comentarios;
         this.reunioes = reunioes;
-<<<<<<< HEAD
         this.emailService = emailService;
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     public List<UserAdminDTO> listar(Role role) {
@@ -82,7 +61,6 @@ public class UserAdminService {
 
         User u = new User();
         preencher(u, req, true);
-<<<<<<< HEAD
 
         // Cadastro nasce com email NAO confirmado e token de verificacao
         u.setEmailConfirmado(false);
@@ -137,9 +115,6 @@ public class UserAdminService {
         u.setTokenConfirmacaoExpiraEm(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_TTL_HOURS));
         users.save(u);
         emailService.enviarConfirmacaoCadastro(u, token);
-=======
-        return UserAdminDTO.of(users.save(u));
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 
     @Transactional

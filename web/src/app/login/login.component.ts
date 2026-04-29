@@ -1,14 +1,7 @@
-<<<<<<< HEAD
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-=======
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -18,20 +11,14 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
   styleUrls: ['./login.component.scss'],
   imports: [CommonModule, FormsModule],
 })
-<<<<<<< HEAD
 export class LoginComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-=======
-export class LoginComponent {
-  private router = inject(Router);
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
   private http = inject(HttpClient);
 
   email = '';
   password = '';
   error: string | null = null;
-<<<<<<< HEAD
   info: string | null = null;
   loading = false;
   /** Mostra o botao "reenviar email de confirmacao" quando o usuario tenta logar sem ter verificado. */
@@ -60,13 +47,6 @@ export class LoginComponent {
     this.info = null;
     this.showResend = false;
     this.resendingMessage = null;
-
-=======
-  loading = false;
-
-  submit(): void {
-    this.error = null;
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     const email = this.email.trim();
     const password = this.password;
     if (!email || !password) {
@@ -92,7 +72,6 @@ export class LoginComponent {
         this.router.navigateByUrl('/grupos');
       },
       error: (err: HttpErrorResponse) => {
-<<<<<<< HEAD
         if (err.status === 401) {
           this.error = 'Credenciais invalidas.';
         } else if (err.status === 403) {
@@ -103,9 +82,6 @@ export class LoginComponent {
         } else {
           this.error = 'Falha ao autenticar.';
         }
-=======
-        this.error = err.status === 401 ? 'Credenciais invalidas.' : 'Falha ao autenticar.';
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
         sessionStorage.removeItem('sgtc_auth');
         localStorage.removeItem('sgtc_auth');
         sessionStorage.removeItem('sgtc_user');
@@ -115,7 +91,6 @@ export class LoginComponent {
     });
   }
 
-<<<<<<< HEAD
   reenviarConfirmacao(): void {
     const email = this.email.trim();
     if (!email) {
@@ -138,9 +113,6 @@ export class LoginComponent {
       },
     });
   }
-
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
   private readJwtPayload(token: string): Record<string, unknown> | null {
     try {
       const parts = token.split('.');

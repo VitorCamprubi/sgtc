@@ -26,10 +26,7 @@ public class DataLoader implements CommandLineRunner {
             admin.setEmail("admin@sgtc.local");
             admin.setSenhaHash(enc.encode("admin123"));
             admin.setRole(Role.ADMIN);
-<<<<<<< HEAD
             admin.setEmailConfirmado(true);
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
             repo.save(admin);
         }
         if (repo.findByEmail("professor@sgtc.local").isEmpty()) {
@@ -38,10 +35,7 @@ public class DataLoader implements CommandLineRunner {
             u.setEmail("professor@sgtc.local");
             u.setSenhaHash(enc.encode("prof123"));
             u.setRole(Role.PROFESSOR);
-<<<<<<< HEAD
             u.setEmailConfirmado(true);
-=======
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
             repo.save(u);
         }
         if (repo.findByEmail("aluno@sgtc.local").isEmpty()) {
@@ -51,7 +45,6 @@ public class DataLoader implements CommandLineRunner {
             u.setSenhaHash(enc.encode("aluno123"));
             u.setRole(Role.ALUNO);
             u.setRa("0001");
-<<<<<<< HEAD
             u.setEmailConfirmado(true);
             repo.save(u);
         }
@@ -65,9 +58,5 @@ public class DataLoader implements CommandLineRunner {
                 repo.save(usuario);
             }
         });
-=======
-            repo.save(u);
-        }
->>>>>>> 4907f041c88e3fc897e86cccf1262a32da26fe88
     }
 }
