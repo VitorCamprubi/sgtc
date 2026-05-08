@@ -23,6 +23,8 @@ import java.util.UUID;
 @Service
 public class ReuniaoService {
     public static final int MAX_ATIVIDADES_REALIZADAS = 340;
+    /** Tempo de vida do token de confirmacao da reuniao (botao no email). */
+    private static final int TOKEN_CONFIRMACAO_TTL_HORAS = 12;
 
     public record ExecucaoReuniaoDados(
             LocalDate dataAtividadesRealizadas,
@@ -66,8 +68,9 @@ public class ReuniaoService {
         r.setStatus(ReuniaoStatus.AGUARDANDO_DATA_REUNIAO);
         limparDadosExecucao(r);
         r.setCriadoPor(atual);
-        // Token de confirmacao (links no e-mail do professor)
+        // Token de confirmacao (links no e-mail do professor) com TTL.
         r.setTokenConfirmacao(UUID.randomUUID().toString());
+        r.setTokenExpiraEm(LocalDateTime.now().plusHours(TOKEN_CONFIRMACAO_TTL_HORAS));
         r.setConfirmadaPeloProfessor(null);
         Reuniao salva = repo.save(r);
 
@@ -118,6 +121,13 @@ public class ReuniaoService {
         if (r.getStatus() != ReuniaoStatus.AGUARDANDO_DATA_REUNIAO) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reuniao ja encerrada");
         }
+        if (r.getTokenExpiraEm() != null && r.getTokenExpiraEm().isBefore(LocalDateTime.now())) {
+            // Token expirado: invalida para evitar reuso e devolve 410 Gone.
+            r.setTokenConfirmacao(null);
+            r.setTokenExpiraEm(null);
+            repo.save(r);
+            throw new ResponseStatusException(HttpStatus.GONE, "Link de confirmacao expirado");
+        }
         r.setConfirmadaPeloProfessor(confirmada);
         r.setRespondidaEm(LocalDateTime.now());
         if (!confirmada) {
@@ -126,6 +136,7 @@ public class ReuniaoService {
         }
         // Apos resposta, invalida o token para evitar reuso
         r.setTokenConfirmacao(null);
+        r.setTokenExpiraEm(null);
         Reuniao salva = repo.save(r);
 
         try {

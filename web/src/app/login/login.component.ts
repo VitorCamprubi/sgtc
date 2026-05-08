@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -9,7 +9,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
 })
 export class LoginComponent implements OnInit {
   private router = inject(Router);
@@ -31,14 +31,14 @@ export class LoginComponent implements OnInit {
     // do endpoint GET /api/auth/verify-email
     const status = this.route.snapshot.queryParamMap.get('verificacao');
     if (status === 'ok') {
-      this.info = 'E-mail confirmado com sucesso! Voce ja pode entrar.';
+      this.info = 'E-mail confirmado com sucesso! Você já pode entrar.';
     } else if (status === 'expirado') {
-      this.error = 'O link de confirmacao expirou. Informe seu e-mail abaixo e clique em "Reenviar confirmacao".';
+      this.error = 'O link de confirmação expirou. Informe seu e-mail abaixo e clique em "Reenviar confirmação".';
       this.showResend = true;
     } else if (status === 'invalido') {
-      this.error = 'Link de confirmacao invalido ou ja utilizado.';
+      this.error = 'Link de confirmação inválido ou já utilizado.';
     } else if (status === 'erro') {
-      this.error = 'Nao foi possivel confirmar o e-mail. Tente novamente mais tarde.';
+      this.error = 'Não foi possível confirmar o e-mail. Tente novamente mais tarde.';
     }
   }
 
@@ -53,6 +53,7 @@ export class LoginComponent implements OnInit {
       this.error = 'Informe e-mail e senha.';
       return;
     }
+
 
     this.loading = true;
     this.http.post<LoginResponse>('/api/auth/login', { email, senha: password }).subscribe({
@@ -73,11 +74,11 @@ export class LoginComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         if (err.status === 401) {
-          this.error = 'Credenciais invalidas.';
+          this.error = 'Credenciais inválidas.';
         } else if (err.status === 403) {
           // E-mail ainda nao confirmado: oferece o reenvio
           this.error =
-            'E-mail ainda nao confirmado. Verifique sua caixa de entrada ou clique em "Reenviar confirmacao".';
+            'E-mail ainda não confirmado. Verifique sua caixa de entrada ou clique em "Reenviar confirmação".';
           this.showResend = true;
         } else {
           this.error = 'Falha ao autenticar.';
@@ -103,13 +104,13 @@ export class LoginComponent implements OnInit {
       next: () => {
         this.resending = false;
         this.resendingMessage =
-          'Se o e-mail estiver cadastrado, um novo link de confirmacao foi enviado.';
+          'Se o e-mail estiver cadastrado, um novo link de confirmação foi enviado.';
       },
       error: () => {
         this.resending = false;
         // Por seguranca o backend nao revela se o email existe; reportamos o mesmo texto
         this.resendingMessage =
-          'Se o e-mail estiver cadastrado, um novo link de confirmacao foi enviado.';
+          'Se o e-mail estiver cadastrado, um novo link de confirmação foi enviado.';
       },
     });
   }

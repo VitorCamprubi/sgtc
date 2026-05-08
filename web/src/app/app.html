@@ -1,14 +1,11 @@
 <div class="app-shell">
-  <header class="app-header">
+  <header class="app-header" *ngIf="isLoggedIn">
     <div class="brand-block">
       <span class="brand-title">SGTC</span>
-      <span class="brand-subtitle">Fatec Tatui</span>
+      <span class="brand-subtitle">Fatec Tatuí</span>
     </div>
 
     <nav class="primary-nav">
-      <a routerLink="/login" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        Login
-      </a>
       <a routerLink="/grupos" routerLinkActive="active">Grupos</a>
       <a *ngIf="isAdminLinkVisible" routerLink="/admin/usuarios" routerLinkActive="active">Admin</a>
     </nav>
@@ -19,7 +16,7 @@
     </div>
   </header>
 
-  <main class="app-main">
+  <main class="app-main" [class.app-main--auth]="!isLoggedIn">
     <router-outlet />
   </main>
 </div>

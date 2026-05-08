@@ -90,6 +90,35 @@ public class EmailService {
     }
 
     // -----------------------------------------------------------------
+    // 1b) Recuperacao de senha
+    // -----------------------------------------------------------------
+    @Async
+    public void enviarRecuperacaoSenha(User usuario, String token) {
+        if (usuario == null || usuario.getEmail() == null) return;
+        String link = webUrl + "/redefinir-senha?token=" + urlEncode(token);
+        String assunto = "Recuperacao de senha - SGTC";
+        String html = """
+                <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto">
+                  <h2 style="color:#0d47a1">Redefinicao de senha</h2>
+                  <p>Ola, <strong>%s</strong>.</p>
+                  <p>Recebemos um pedido para redefinir a senha da sua conta no SGTC.
+                     Se foi voce, clique no botao abaixo (link valido por 1 hora):</p>
+                  <p style="text-align:center;margin:32px 0">
+                    <a href="%s" style="background:#1976d2;color:#fff;padding:12px 24px;
+                       border-radius:6px;text-decoration:none;font-weight:bold">
+                       Definir nova senha
+                    </a>
+                  </p>
+                  <p style="font-size:12px;color:#555">Se o botao nao funcionar, copie e cole no navegador:<br>
+                     <a href="%s">%s</a></p>
+                  <p style="font-size:12px;color:#999">Se voce nao solicitou esta recuperacao, ignore este e-mail
+                     e a senha atual continuara valida.</p>
+                </div>
+                """.formatted(escape(usuario.getNome()), link, link, link);
+        enviarHtml(usuario.getEmail(), assunto, html);
+    }
+
+    // -----------------------------------------------------------------
     // 2) Reuniao agendada -> professor (com botoes confirmar/recusar)
     // -----------------------------------------------------------------
     @Async

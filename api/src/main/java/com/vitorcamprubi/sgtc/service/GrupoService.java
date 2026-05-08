@@ -64,7 +64,6 @@ public class GrupoService {
     @Transactional
     public GrupoResumoDTO criar(GrupoCreateRequest req) {
         Grupo g = new Grupo();
-        g.setId(proximoIdDisponivel());
         preencherDadosGrupo(g, req);
         g.setStatus(GrupoStatus.EM_CURSO);
         g.setNotaFinal(null);
@@ -325,23 +324,6 @@ public class GrupoService {
                 g.getCoorientador() != null ? g.getCoorientador().getNome() : null,
                 count
         );
-    }
-
-    private long proximoIdDisponivel() {
-        List<Long> ids = grupos.findAllIdsOrderByIdAsc();
-        long esperado = 1L;
-        for (Long id : ids) {
-            if (id == null) {
-                continue;
-            }
-            if (id > esperado) {
-                break;
-            }
-            if (id.equals(esperado)) {
-                esperado++;
-            }
-        }
-        return esperado;
     }
 
     private List<GrupoResumoDTO> listarPorStatusDoUsuario(User atual, String busca, GrupoStatus... statusAceitos) {

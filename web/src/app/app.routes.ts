@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
 import { adminGuard } from './core/admin.guard';
 import { LoginComponent } from './login/login.component';
+import { EsqueciSenhaComponent } from './login/esqueci-senha.component';
+import { RedefinirSenhaComponent } from './login/redefinir-senha.component';
 import { GruposComponent } from './features/grupos/grupos.component';
 import { GrupoDetalheComponent } from './features/grupos/grupo-detalhe.component';
 import { AdminUsuariosComponent } from './features/admin/admin-usuarios.component';
@@ -10,6 +12,14 @@ export const routes: Routes = [
   {
     path: 'login',
     component: LoginComponent,
+  },
+  {
+    path: 'esqueci-senha',
+    component: EsqueciSenhaComponent,
+  },
+  {
+    path: 'redefinir-senha',
+    component: RedefinirSenhaComponent,
   },
   {
     path: 'admin/usuarios',

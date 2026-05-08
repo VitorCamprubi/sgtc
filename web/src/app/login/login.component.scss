@@ -1,11 +1,11 @@
 :host {
   display: block;
-  min-height: 75vh;
+  min-height: 100vh;
   background: var(--sgtc-page-background);
 }
 
 .login-page {
-  min-height: 100%;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -120,4 +120,19 @@ button {
 
 .support-email:hover {
   color: var(--sgtc-primary);
+}
+
+.forgot-password-link {
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+  text-align: center;
+
+  a {
+    color: var(--sgtc-primary, #1976d2);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
 }

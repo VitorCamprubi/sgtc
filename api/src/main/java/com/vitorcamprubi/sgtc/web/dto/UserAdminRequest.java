@@ -1,6 +1,7 @@
 package com.vitorcamprubi.sgtc.web.dto;
 
 import com.vitorcamprubi.sgtc.domain.Role;
+import com.vitorcamprubi.sgtc.security.password.StrongPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +13,12 @@ public class UserAdminRequest {
     @NotBlank @Email
     private String email;
 
+    /**
+     * Em criacao a senha eh obrigatoria; em atualizacao pode vir vazia para
+     * manter a senha atual. Por isso allowBlank=true e a obrigatoriedade
+     * eh checada no service apenas no fluxo de criacao.
+     */
+    @StrongPassword(allowBlank = true)
     private String senha;
 
     @NotNull

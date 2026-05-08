@@ -36,6 +36,13 @@ public class User {
     @Column(name = "token_confirmacao_expira_em")
     private LocalDateTime tokenConfirmacaoExpiraEm;
 
+    // === Recuperacao de senha ===
+    @Column(name = "token_recuperacao", length = 100)
+    private String tokenRecuperacao;
+
+    @Column(name = "token_recuperacao_expira_em")
+    private LocalDateTime tokenRecuperacaoExpiraEm;
+
     // getters/setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -56,5 +63,11 @@ public class User {
     public LocalDateTime getTokenConfirmacaoExpiraEm() { return tokenConfirmacaoExpiraEm; }
     public void setTokenConfirmacaoExpiraEm(LocalDateTime tokenConfirmacaoExpiraEm) {
         this.tokenConfirmacaoExpiraEm = tokenConfirmacaoExpiraEm;
+    }
+    public String getTokenRecuperacao() { return tokenRecuperacao; }
+    public void setTokenRecuperacao(String tokenRecuperacao) { this.tokenRecuperacao = tokenRecuperacao; }
+    public LocalDateTime getTokenRecuperacaoExpiraEm() { return tokenRecuperacaoExpiraEm; }
+    public void setTokenRecuperacaoExpiraEm(LocalDateTime tokenRecuperacaoExpiraEm) {
+        this.tokenRecuperacaoExpiraEm = tokenRecuperacaoExpiraEm;
     }
 }

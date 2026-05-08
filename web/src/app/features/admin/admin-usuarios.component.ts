@@ -61,7 +61,7 @@ export class AdminUsuariosComponent implements OnInit {
       return null;
     }
     if (role === 'ALUNO' && !ra) {
-      this.adminError.set('RA e obrigatorio para cadastro de aluno.');
+      this.adminError.set('RA é obrigatório para cadastro de aluno.');
       return null;
     }
 
@@ -99,7 +99,7 @@ export class AdminUsuariosComponent implements OnInit {
   }
 
   excluirUsuario(u: Usuario) {
-    if (!confirm(`Excluir o usuario "${u.nome}"?`)) return;
+    if (!confirm(`Excluir o usuário "${u.nome}"?`)) return;
 
     this.adminError.set(null);
     this.usuariosApi.excluirAdmin(u.id).subscribe({

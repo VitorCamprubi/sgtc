@@ -30,12 +30,19 @@ export class AppComponent implements OnInit {
     return this.storedUser?.email ?? null;
   }
 
+  get isLoggedIn(): boolean {
+    return !!(
+      sessionStorage.getItem(this.AUTH_KEY) ||
+      localStorage.getItem(this.AUTH_KEY)
+    );
+  }
+
   get isAdmin(): boolean {
     return this.userRole === 'ADMIN' || this.storedUser?.role === 'ADMIN';
   }
 
   get isAdminLinkVisible(): boolean {
-    return this.isAdmin;
+    return this.isLoggedIn && this.isAdmin;
   }
 
   ngOnInit(): void {

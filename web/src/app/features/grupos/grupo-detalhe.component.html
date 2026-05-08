@@ -2,20 +2,20 @@
   <header class="detalhe-header">
     <div>
       <h2>{{ grupoTitulo() || ('Grupo ' + grupoId) }}</h2>
-      <p class="section-subtitle">Gerencie documentos, comentarios, reunioes e membros do grupo.</p>
+      <p class="section-subtitle">Gerencie documentos, comentários, reuniões e membros do grupo.</p>
       @if (grupoArquivado()) {
-        <p class="status-locked">Grupo arquivado. Alteracoes estao bloqueadas.</p>
+        <p class="status-locked">Grupo arquivado. Alterações estão bloqueadas.</p>
       }
     </div>
     <button type="button" class="ghost-small" (click)="atualizarPainel()">Atualizar painel</button>
   </header>
 
-  <nav class="group-tabs" aria-label="Secoes do grupo">
+  <nav class="group-tabs" aria-label="Seções do grupo">
     <a [routerLink]="['/grupos', grupoId, 'documentos']" [class.active]="abaAtiva() === 'documentos'">
       Documentos
     </a>
     <a [routerLink]="['/grupos', grupoId, 'reunioes']" [class.active]="abaAtiva() === 'reunioes'">
-      Reunioes
+      Reuniões
     </a>
     <a [routerLink]="['/grupos', grupoId, 'membros']" [class.active]="abaAtiva() === 'membros'">
       Membros do grupo
@@ -30,11 +30,11 @@
     <section class="card-block">
       <div class="block-header">
         <h3>Documentos</h3>
-        <p class="block-subtitle">Envie novos arquivos e gerencie versoes existentes.</p>
+        <p class="block-subtitle">Envie novos arquivos e gerencie versões existentes.</p>
       </div>
 
       <div class="upload-grid">
-        <input type="text" placeholder="Titulo do documento" [(ngModel)]="tituloDocumento" />
+        <input type="text" placeholder="Título do documento" [(ngModel)]="tituloDocumento" />
         <input #fileInput type="file" (change)="onFileSelected($event)" />
         <button (click)="uploadFromState(fileInput)" [disabled]="!canUploadDocumento() || !tituloDocumento.trim() || !arquivoSelecionado">Enviar</button>
       </div>
@@ -49,12 +49,12 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Titulo</th>
-                <th>Versao</th>
+                <th>Título</th>
+                <th>Versão</th>
                 <th>Enviado por</th>
                 <th>Criado</th>
                 <th>Tamanho</th>
-                <th>Acoes</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -104,9 +104,9 @@
 
     <section class="card-block">
       <div class="block-header">
-        <h3>Comentarios</h3>
+        <h3>Comentários</h3>
         @if (!docSelecionado()) {
-          <p class="block-subtitle">Selecione um documento na tabela acima para ver ou enviar comentarios.</p>
+          <p class="block-subtitle">Selecione um documento na tabela acima para ver ou enviar comentários.</p>
         } @else {
           <p class="block-subtitle">Documento selecionado: {{ docSelecionado()?.titulo }} v{{ docSelecionado()?.versao }}</p>
         }
@@ -115,15 +115,15 @@
       @if (docSelecionado()) {
         @if (canComment()) {
           <div class="comentario-input">
-            <textarea [(ngModel)]="novoComentario" placeholder="Novo comentario" rows="4"></textarea>
-            <button (click)="enviarComentario()" [disabled]="!novoComentario.trim()">Enviar comentario</button>
+            <textarea [(ngModel)]="novoComentario" placeholder="Novo comentário" rows="4"></textarea>
+            <button (click)="enviarComentario()" [disabled]="!novoComentario.trim()">Enviar comentário</button>
           </div>
         }
 
         @if (comentariosDoc() === null) {
-          <p class="state-info">Carregando comentarios...</p>
+          <p class="state-info">Carregando comentários...</p>
         } @else if (comentariosDoc()?.length === 0) {
-          <p class="state-info">Nenhum comentario.</p>
+          <p class="state-info">Nenhum comentário.</p>
         } @else {
           <ul class="comments-list">
             @for (c of comentariosDoc()?.slice()?.reverse(); track c.id) {
@@ -160,8 +160,8 @@
   @if (abaAtiva() === 'reunioes') {
     <section class="card-block">
       <div class="block-header">
-        <h3>Reunioes</h3>
-        <p class="block-subtitle">Acompanhe a agenda e historico de reunioes do grupo.</p>
+        <h3>Reuniões</h3>
+        <p class="block-subtitle">Acompanhe a agenda e o histórico de reuniões do grupo.</p>
         <button type="button" class="ghost-small" [disabled]="gerandoPdf()" (click)="gerarPdfReunioes()">
           {{ gerandoPdf() ? 'Gerando PDF...' : 'Gerar PDF' }}
         </button>
@@ -171,7 +171,7 @@
         <div class="form-reuniao">
           <input type="datetime-local" [(ngModel)]="novaDataHora" />
           <input placeholder="Pauta" [(ngModel)]="novaPauta" />
-          <input placeholder="Observacoes" [(ngModel)]="novasObs" />
+          <input placeholder="Observações" [(ngModel)]="novasObs" />
           <button (click)="agendarReuniao()">Agendar</button>
         </div>
       }
@@ -180,21 +180,21 @@
         @if (listaReunioes() === null) {
           <p class="state-info pad">Carregando...</p>
         } @else if (listaReunioes()?.length === 0) {
-          <p class="state-info pad">Nenhuma reuniao.</p>
+          <p class="state-info pad">Nenhuma reunião.</p>
         } @else {
           <p class="table-title">Agenda aberta</p>
           @if (reunioesAbertas().length === 0) {
-            <p class="state-info pad">Nenhuma reuniao em aberto.</p>
+            <p class="state-info pad">Nenhuma reunião em aberto.</p>
           } @else {
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Data/Hora</th>
                   <th>Pauta</th>
-                  <th>Observacoes</th>
+                  <th>Observações</th>
                   <th>Status</th>
                   <th>Criado por</th>
-                  @if (canManageReunioes()) { <th>Acoes</th> }
+                  @if (canManageReunioes()) { <th>Ações</th> }
                 </tr>
               </thead>
               <tbody>
@@ -220,8 +220,8 @@
                           </div>
                         } @else if (concluindoReuniaoId() === r.id) {
                           <div class="inline-actions">
-                            <button type="button" class="ghost-small" (click)="cancelarConclusaoReuniao()">Cancelar conclusao</button>
-                            <button type="button" class="ghost-small danger" (click)="cancelarReuniao(r)">Cancelar reuniao</button>
+                            <button type="button" class="ghost-small" (click)="cancelarConclusaoReuniao()">Cancelar conclusão</button>
+                            <button type="button" class="ghost-small danger" (click)="cancelarReuniao(r)">Cancelar reunião</button>
                           </div>
                         } @else {
                           <div class="inline-actions">
@@ -242,7 +242,7 @@
                                  type="date"
                                  [(ngModel)]="execucaoDataAtividades" />
 
-                          <label for="atividades-reuniao-{{ r.id }}">Atividades realizadas (obrigatorio)</label>
+                          <label for="atividades-reuniao-{{ r.id }}">Atividades realizadas (obrigatório)</label>
                           <textarea id="atividades-reuniao-{{ r.id }}"
                                     rows="4"
                                     placeholder="Descreva as atividades realizadas no encontro."
@@ -259,7 +259,7 @@
                             <option value="RUIM">Ruim</option>
                             <option value="REGULAR">Regular</option>
                             <option value="BOM">Bom</option>
-                            <option value="OTIMO">Otimo</option>
+                            <option value="OTIMO">Ótimo</option>
                           </select>
 
                           <label for="prof-disciplina-reuniao-{{ r.id }}">Prof. Disciplina</label>
@@ -287,12 +287,12 @@
 
       <div class="table-shell historico-shell">
         @if (listaReunioes() !== null) {
-          <p class="table-title">Historico de reunioes fechadas</p>
+          <p class="table-title">Histórico de reuniões fechadas</p>
         }
         @if (listaReunioes() === null) {
           <p class="state-info pad">Carregando...</p>
         } @else if (historicoReunioes().length === 0) {
-          <p class="state-info pad">Nenhuma reuniao no historico.</p>
+          <p class="state-info pad">Nenhuma reunião no histórico.</p>
         } @else {
           <table class="data-table">
             <thead>
@@ -301,7 +301,7 @@
                 <th>Data realizada</th>
                 <th>Status</th>
                 <th>Desempenho</th>
-                <th>Relatorio</th>
+                <th>Relatório</th>
                 <th>Prof. Disciplina</th>
               </tr>
             </thead>
@@ -370,7 +370,7 @@
           </div>
           <select class="membros-select" multiple size="8" (change)="onMembrosChange($event)">
             @if (alunosDisponiveis().length === 0) {
-              <option disabled>Todos os alunos ja fazem parte do grupo.</option>
+              <option disabled>Todos os alunos já fazem parte do grupo.</option>
             } @else if (alunosDisponiveisFiltrados().length === 0) {
               <option disabled>Nenhum aluno encontrado para "{{ buscaAluno() }}".</option>
             } @else {

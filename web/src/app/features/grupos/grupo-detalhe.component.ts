@@ -125,7 +125,7 @@ export class GrupoDetalheComponent implements OnInit {
     this.route.paramMap.subscribe((params) => {
       const groupId = Number(params.get('id'));
       if (!Number.isFinite(groupId) || groupId <= 0) {
-        this.error.set('Grupo invalido.');
+        this.error.set('Grupo inválido.');
         return;
       }
 
@@ -184,14 +184,14 @@ export class GrupoDetalheComponent implements OnInit {
 
   uploadFromState(fileInput: HTMLInputElement) {
     if (!this.canUploadDocumento()) {
-      this.error.set('Grupo arquivado. Nao e possivel enviar novos documentos.');
+      this.error.set('Grupo arquivado. Não é possível enviar novos documentos.');
       return;
     }
 
     const file = this.arquivoSelecionado;
     const titulo = this.tituloDocumento.trim();
     if (!file || !titulo) {
-      this.error.set('Informe titulo e selecione um arquivo.');
+      this.error.set('Informe título e selecione um arquivo.');
       return;
     }
 
@@ -240,7 +240,7 @@ export class GrupoDetalheComponent implements OnInit {
 
     const titulo = this.tituloDocumentoEditando.trim();
     if (!titulo) {
-      this.error.set('Informe um titulo valido para o documento.');
+      this.error.set('Informe um título válido para o documento.');
       return;
     }
 
@@ -323,7 +323,7 @@ export class GrupoDetalheComponent implements OnInit {
 
     const texto = this.textoComentarioEditando.trim();
     if (!texto) {
-      this.error.set('Comentario nao pode ser vazio.');
+      this.error.set('Comentário não pode ser vazio.');
       return;
     }
 
@@ -341,7 +341,7 @@ export class GrupoDetalheComponent implements OnInit {
 
   excluirComentario(c: Comentario) {
     if (!this.podeGerenciarComentario(c)) return;
-    if (!confirm('Excluir este comentario?')) return;
+    if (!confirm('Excluir este comentário?')) return;
 
     const doc = this.docSelecionado();
     if (!doc) return;
@@ -373,7 +373,7 @@ export class GrupoDetalheComponent implements OnInit {
 
   agendarReuniao() {
     if (this.grupoArquivado()) {
-      this.error.set('Grupo arquivado. Nao e possivel agendar reunioes.');
+      this.error.set('Grupo arquivado. Não é possível agendar reuniões.');
       return;
     }
     if (!this.canCreateReuniao()) return;
@@ -383,7 +383,7 @@ export class GrupoDetalheComponent implements OnInit {
     const observacoes = this.novasObs.trim();
 
     if (!dataHora || !pauta) {
-      alert('E necessario informar data/hora e pauta.');
+      alert('É necessário informar data/hora e pauta.');
       return;
     }
 
@@ -423,7 +423,7 @@ export class GrupoDetalheComponent implements OnInit {
     const observacoes = this.editarObservacoes.trim();
 
     if (!dataHora || !pauta) {
-      this.error.set('E necessario informar data/hora e pauta.');
+      this.error.set('É necessário informar data/hora e pauta.');
       return;
     }
 
@@ -468,7 +468,7 @@ export class GrupoDetalheComponent implements OnInit {
       !desempenhoGrupo ||
       !professorDisciplina
     ) {
-      this.error.set('Preencha todos os campos da execucao da reuniao.');
+      this.error.set('Preencha todos os campos da execução da reunião.');
       return;
     }
     if (atividadesRealizadas.length > this.maxAtividadesRealizadas) {
@@ -496,7 +496,7 @@ export class GrupoDetalheComponent implements OnInit {
 
   cancelarReuniao(r: Reuniao) {
     if (!this.canManageReunioes() || !this.isReuniaoAberta(r)) return;
-    if (!confirm(`Cancelar reuniao "${r.pauta}"?`)) return;
+    if (!confirm(`Cancelar reunião "${r.pauta}"?`)) return;
 
     this.reunioes.cancelar(r.id).subscribe({
       next: () => {
@@ -573,7 +573,7 @@ export class GrupoDetalheComponent implements OnInit {
       next: (response) => {
         const blob = response.body;
         if (!blob) {
-          this.error.set('Nao foi possivel gerar o PDF das reunioes.');
+          this.error.set('Não foi possível gerar o PDF das reuniões.');
           return;
         }
 
@@ -602,13 +602,13 @@ export class GrupoDetalheComponent implements OnInit {
   statusReuniaoLabel(status: ReuniaoStatus): string {
     switch (status) {
       case 'AGUARDANDO_DATA_REUNIAO':
-        return 'Aguardando data da reuniao';
+        return 'Aguardando data da reunião';
       case 'CONCLUIDA':
         return 'Executada';
       case 'CANCELADA':
         return 'Cancelada';
       case 'NAO_REALIZADA':
-        return 'Nao realizada';
+        return 'Não realizada';
       default:
         return status;
     }
@@ -638,7 +638,7 @@ export class GrupoDetalheComponent implements OnInit {
       case 'BOM':
         return 'Bom';
       case 'OTIMO':
-        return 'Otimo';
+        return 'Ótimo';
       default:
         return '-';
     }

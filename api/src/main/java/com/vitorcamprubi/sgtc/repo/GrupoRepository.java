@@ -20,9 +20,6 @@ public interface GrupoRepository extends JpaRepository<Grupo, Long> {
     List<Grupo> findByProfessorAndStatus(@Param("professorId") Long professorId,
                                          @Param("status") GrupoStatus status);
 
-    @Query("select g.id from Grupo g order by g.id asc")
-    List<Long> findAllIdsOrderByIdAsc();
-
     @Query("select ga.grupo from GrupoAluno ga where ga.aluno.id = :alunoId")
     List<Grupo> findByAlunoId(@Param("alunoId") Long alunoId);
 

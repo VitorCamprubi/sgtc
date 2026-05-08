@@ -1,5 +1,12 @@
-target
-.git
+target/
+.idea/
+.vscode/
+*.iml
+.git/
 .gitignore
 .env
-node_modules
+.mvn/wrapper/maven-wrapper.jar
+.DS_Store
+uploads/
+HELP.md
+node_modules/

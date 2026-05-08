@@ -2,7 +2,7 @@
   <div class="login-card">
     <div class="brand">
       <span class="brand-name">Fatec</span>
-      <span class="brand-city">Tatui</span>
+      <span class="brand-city">Tatuí</span>
     </div>
     <p class="brand-campus">
       Prof. Wilson Roberto<br />
@@ -17,7 +17,7 @@
         name="email"
         [(ngModel)]="email"
         type="email"
-        placeholder="Digite seu usuario (e-mail)"
+        placeholder="Digite seu usuário (e-mail)"
         autocomplete="username"
         required
       />
@@ -37,6 +37,10 @@
         {{ loading ? 'Entrando...' : 'Login' }}
       </button>
 
+      <p class="forgot-password-link">
+        <a routerLink="/esqueci-senha">Esqueci minha senha</a>
+      </p>
+
       <p *ngIf="error" class="error-message" role="alert">{{ error }}</p>
 
       <div *ngIf="showResend" class="resend-box">
@@ -46,7 +50,7 @@
           (click)="reenviarConfirmacao()"
           [disabled]="resending"
         >
-          {{ resending ? 'Enviando...' : 'Reenviar confirmacao' }}
+          {{ resending ? 'Enviando...' : 'Reenviar confirmação' }}
         </button>
         <p *ngIf="resendingMessage" class="resend-message">{{ resendingMessage }}</p>
       </div>

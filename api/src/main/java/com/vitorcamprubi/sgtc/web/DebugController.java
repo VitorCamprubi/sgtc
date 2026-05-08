@@ -2,6 +2,7 @@ package com.vitorcamprubi.sgtc.web;
 
 import com.vitorcamprubi.sgtc.repo.UserRepository;
 import com.vitorcamprubi.sgtc.web.dto.UserAdminDTO;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
+@Profile("!prod")
 @RequestMapping("/api/debug")
 @PreAuthorize("hasRole('ADMIN')")
 public class DebugController {

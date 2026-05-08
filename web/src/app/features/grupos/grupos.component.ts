@@ -105,7 +105,7 @@ export class GruposComponent implements OnInit {
 
   excluirGrupo(id: number, titulo: string) {
     if (!this.isAdmin()) return;
-    if (!confirm(`Excluir o grupo "${titulo}"? Esta acao eh definitiva.`)) return;
+    if (!confirm(`Excluir o grupo "${titulo}"? Esta ação é definitiva.`)) return;
 
     this.error.set(null);
     this.deletando.set(id);
@@ -129,7 +129,7 @@ export class GruposComponent implements OnInit {
 
     const nota = this.parseNota(entrada);
     if (nota === null || nota < 0 || nota > 10) {
-      this.error.set('Informe uma nota valida entre 0 e 10.');
+      this.error.set('Informe uma nota válida entre 0 e 10.');
       return;
     }
 
@@ -173,12 +173,12 @@ export class GruposComponent implements OnInit {
     };
 
     if (!payload.titulo || !payload.orientadorId || !payload.materia) {
-      this.error.set('Preencha titulo, materia e orientador.');
+      this.error.set('Preencha título, matéria e orientador.');
       return;
     }
 
     if (payload.orientadorId === payload.coorientadorId) {
-      this.error.set('O mesmo professor nao pode ser orientador e coorientador no mesmo grupo.');
+      this.error.set('O mesmo professor não pode ser orientador e coorientador no mesmo grupo.');
       return;
     }
 
@@ -223,12 +223,12 @@ export class GruposComponent implements OnInit {
     };
 
     if (!payload.titulo || !payload.orientadorId || !payload.materia) {
-      this.error.set('Preencha titulo, materia e orientador para editar o grupo.');
+      this.error.set('Preencha título, matéria e orientador para editar o grupo.');
       return;
     }
 
     if (payload.orientadorId === payload.coorientadorId) {
-      this.error.set('O mesmo professor nao pode ser orientador e coorientador no mesmo grupo.');
+      this.error.set('O mesmo professor não pode ser orientador e coorientador no mesmo grupo.');
       return;
     }
 

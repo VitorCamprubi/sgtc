@@ -1,0 +1,51 @@
+<section class="login-page">
+  <div class="login-card">
+    <div class="brand">
+      <span class="brand-name">Fatec</span>
+      <span class="brand-city">Tatuí</span>
+    </div>
+    <p class="brand-campus">Definir nova senha</p>
+
+    <p *ngIf="done" class="info-message" role="status">
+      Senha redefinida com sucesso! Você será redirecionado para o login em alguns segundos.
+    </p>
+
+    <form (ngSubmit)="submit()" autocomplete="off" novalidate *ngIf="!done">
+      <p class="info-message">
+        Use ao menos 8 caracteres, com letras e números.
+      </p>
+
+      <label class="sr-only" for="nova-senha">Nova senha</label>
+      <input
+        id="nova-senha"
+        name="nova-senha"
+        [(ngModel)]="novaSenha"
+        type="password"
+        placeholder="Nova senha"
+        autocomplete="new-password"
+        required
+      />
+
+      <label class="sr-only" for="confirmar-senha">Confirmar nova senha</label>
+      <input
+        id="confirmar-senha"
+        name="confirmar-senha"
+        [(ngModel)]="confirmarSenha"
+        type="password"
+        placeholder="Confirmar nova senha"
+        autocomplete="new-password"
+        required
+      />
+
+      <button type="submit" [disabled]="loading || !token">
+        {{ loading ? 'Salvando...' : 'Definir nova senha' }}
+      </button>
+
+      <p *ngIf="error" class="error-message" role="alert">{{ error }}</p>
+    </form>
+
+    <p class="forgot-password-link">
+      <a routerLink="/login">Voltar ao login</a>
+    </p>
+  </div>
+</section>

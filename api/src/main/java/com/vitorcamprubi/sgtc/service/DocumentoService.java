@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +33,29 @@ import java.util.regex.Pattern;
 @Service
 public class DocumentoService {
     private static final Pattern UNSAFE_FILENAME_CHARS = Pattern.compile("[^a-zA-Z0-9._-]");
+
+    /**
+     * Tipos MIME aceitos para upload de documentos.
+     * Mantemos restrito a formatos academicos comuns para reduzir superficie de ataque.
+     */
+    private static final Set<String> MIME_PERMITIDOS = Set.of(
+            "application/pdf",
+            "application/msword",                                                    // .doc
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+            "application/vnd.oasis.opendocument.text",                               // .odt
+            "application/rtf",
+            "text/plain"
+    );
+
+    private static final Set<String> EXTENSOES_PERMITIDAS = Set.of(
+            ".pdf", ".doc", ".docx", ".odt", ".rtf", ".txt"
+    );
+
+    /** Magic bytes do tipo de arquivo, comparados com os primeiros bytes do upload. */
+    private static final byte[] MAGIC_PDF      = {0x25, 0x50, 0x44, 0x46}; // %PDF
+    private static final byte[] MAGIC_OFFICE_X = {0x50, 0x4B, 0x03, 0x04}; // PK.. (zip - docx/odt)
+    private static final byte[] MAGIC_DOC_OLE  = {(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0}; // OLE2 (.doc legado)
+    private static final byte[] MAGIC_RTF      = {0x7B, 0x5C, 0x72, 0x74}; // {\rt
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -60,6 +84,9 @@ public class DocumentoService {
 
         Grupo g = perms.assertPodeAcessarGrupo(grupoId, atual);
         perms.assertGrupoEmCurso(g);
+
+        validarTipoArquivo(file);
+
         int next = docs.countByGrupoId(grupoId) + 1;
 
         Path dir = Paths.get(uploadDir, String.valueOf(grupoId)).toAbsolutePath().normalize();
@@ -197,5 +224,81 @@ public class DocumentoService {
         if (!pode) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissao");
         }
+    }
+
+    /**
+     * Valida o tipo do arquivo combinando 3 checagens:
+     *   1) Extensao no nome original;
+     *   2) Content-Type declarado pelo cliente;
+     *   3) Magic bytes lidos do conteudo.
+     * Apenas (3) e' confiavel contra um cliente malicioso, mas (1) e (2) eliminam
+     * acidentes obvios e melhoram as mensagens de erro.
+     */
+    private void validarTipoArquivo(MultipartFile file) {
+        String nomeOriginal = file.getOriginalFilename();
+        String extensao = extrairExtensao(nomeOriginal).toLowerCase();
+        if (!EXTENSOES_PERMITIDAS.contains(extensao)) {
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Extensao nao permitida. Permitidas: " + String.join(", ", EXTENSOES_PERMITIDAS));
+        }
+
+        String contentType = file.getContentType();
+        if (contentType != null && !contentType.isBlank() && !MIME_PERMITIDOS.contains(contentType)) {
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Tipo de arquivo nao permitido (" + contentType + ")");
+        }
+
+        byte[] header = lerCabecalho(file, 8);
+        if (!magicBytesValidos(header, extensao)) {
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Conteudo do arquivo nao corresponde a extensao informada");
+        }
+    }
+
+    private static String extrairExtensao(String nomeOriginal) {
+        if (nomeOriginal == null) {
+            return "";
+        }
+        int idx = nomeOriginal.lastIndexOf('.');
+        return idx >= 0 ? nomeOriginal.substring(idx) : "";
+    }
+
+    private static byte[] lerCabecalho(MultipartFile file, int tamanho) {
+        byte[] buffer = new byte[tamanho];
+        try (InputStream in = file.getInputStream()) {
+            int lidos = in.read(buffer);
+            if (lidos < tamanho) {
+                byte[] aparado = new byte[Math.max(lidos, 0)];
+                System.arraycopy(buffer, 0, aparado, 0, aparado.length);
+                return aparado;
+            }
+            return buffer;
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nao foi possivel ler o arquivo");
+        }
+    }
+
+    private static boolean magicBytesValidos(byte[] header, String extensao) {
+        return switch (extensao) {
+            case ".pdf" -> startsWith(header, MAGIC_PDF);
+            case ".docx", ".odt" -> startsWith(header, MAGIC_OFFICE_X);
+            case ".doc" -> startsWith(header, MAGIC_DOC_OLE);
+            case ".rtf" -> startsWith(header, MAGIC_RTF);
+            // .txt nao tem magic byte; aceitamos qualquer conteudo (ja foi limitado por extensao + mime)
+            case ".txt" -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean startsWith(byte[] data, byte[] prefix) {
+        if (data == null || prefix == null || data.length < prefix.length) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length; i++) {
+            if (data[i] != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -4,11 +4,18 @@ import com.vitorcamprubi.sgtc.domain.Role;
 import com.vitorcamprubi.sgtc.domain.User;
 import com.vitorcamprubi.sgtc.repo.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * Cria contas de seed para desenvolvimento (admin/professor/aluno).
+ * Nao executa no perfil "prod" - em producao o primeiro admin deve ser
+ * criado manualmente via SQL ou rotina de bootstrap protegida.
+ */
 @Component
+@Profile("!prod")
 @Order(1)
 public class DataLoader implements CommandLineRunner {
     private final UserRepository repo;
@@ -48,15 +55,5 @@ public class DataLoader implements CommandLineRunner {
             u.setEmailConfirmado(true);
             repo.save(u);
         }
-
-        // Marca usuarios pre-existentes como verificados (migracao leve)
-        repo.findAll().forEach(usuario -> {
-            if (!usuario.isEmailConfirmado() && usuario.getTokenConfirmacao() == null) {
-                // Apenas usuarios criados ANTES desta funcionalidade (sem token gerado)
-                // sao considerados verificados, para nao quebrar logins existentes.
-                usuario.setEmailConfirmado(true);
-                repo.save(usuario);
-            }
-        });
     }
 }

@@ -4,9 +4,9 @@
       <p class="breadcrumbs">
         <span>Admin</span>
         <span aria-hidden="true">/</span>
-        <span>Usuarios</span>
+        <span>Usuários</span>
       </p>
-      <h2>Usuarios</h2>
+      <h2>Usuários</h2>
       <p class="section-subtitle">
         Cadastre, edite ou remova alunos e professores.
       </p>
@@ -46,7 +46,7 @@
       } @else if (usuariosAdmin() === null) {
         <p class="state-info">Selecione um filtro para carregar.</p>
       } @else if (usuariosAdmin()?.length === 0) {
-        <p class="state-info">Nenhum usuario encontrado.</p>
+        <p class="state-info">Nenhum usuário encontrado.</p>
       } @else {
         <div class="table-wrapper">
           <table class="users-table">
@@ -56,7 +56,7 @@
                 <th>Email</th>
                 <th>Perfil</th>
                 @if (adminRoleFiltro() === 'ALUNO') { <th>RA</th> }
-                <th>Acoes</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -81,19 +81,19 @@
     </div>
 
     <div class="admin-users-form card">
-      <h4>{{ editandoId() ? 'Editar usuario' : 'Novo usuario' }}</h4>
+      <h4>{{ editandoId() ? 'Editar usuário' : 'Novo usuário' }}</h4>
       <p class="role-hint">Perfil definido pela aba ativa: <strong>{{ roleCadastroLabel() }}</strong></p>
       <div class="form-grid">
         <input placeholder="Nome" [(ngModel)]="formNome" />
         <input placeholder="Email" type="email" [(ngModel)]="formEmail" />
         <input placeholder="Senha" type="password" [(ngModel)]="formSenha" [required]="!editandoId()" />
         @if (adminRoleFiltro() === 'ALUNO') {
-          <input placeholder="RA (obrigatorio)" [(ngModel)]="formRa" [required]="true" />
+          <input placeholder="RA (obrigatório)" [(ngModel)]="formRa" [required]="true" />
         }
       </div>
       <div class="form-actions">
         <button type="button" (click)="salvarUsuario()">
-          {{ editandoId() ? 'Salvar alteracoes' : 'Cadastrar' }}
+          {{ editandoId() ? 'Salvar alterações' : 'Cadastrar' }}
         </button>
         @if (editandoId()) {
           <button type="button" class="ghost-button" (click)="resetFormUsuario()">Cancelar</button>

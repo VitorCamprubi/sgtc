@@ -1,14 +1,14 @@
 package com.vitorcamprubi.sgtc.domain;
 
 import jakarta.persistence.*;
-import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "grupos")
-public class Grupo implements Persistable<Long> {
+public class Grupo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable=false)
@@ -21,11 +21,11 @@ public class Grupo implements Persistable<Long> {
     private User coorientador;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable=false, length = 3, columnDefinition = "varchar(3) default 'TG'")
+    @Column(nullable=false, length = 3)
     private Materia materia = Materia.TG;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 16, columnDefinition = "varchar(16) default 'EM_CURSO'")
+    @Column(nullable = false, length = 16)
     private GrupoStatus status = GrupoStatus.EM_CURSO;
 
     @Column(name = "nota_final")
@@ -37,11 +37,7 @@ public class Grupo implements Persistable<Long> {
     @Column(nullable=false, updatable=false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Transient
-    private boolean novo = true;
-
     // getters/setters
-    @Override
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTitulo() { return titulo; }
@@ -60,15 +56,4 @@ public class Grupo implements Persistable<Long> {
     public void setArquivadoEm(LocalDateTime arquivadoEm) { this.arquivadoEm = arquivadoEm; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    @Override
-    public boolean isNew() {
-        return novo;
-    }
-
-    @PostLoad
-    @PostPersist
-    private void markNotNew() {
-        this.novo = false;
-    }
 }

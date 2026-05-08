@@ -11,7 +11,7 @@
         @if (abaAtiva() === 'arquivos') {
           Consulte grupos finalizados e arquivados.
         } @else {
-          Acompanhe os grupos cadastrados e gerencie novas turmas quando necessario.
+          Acompanhe os grupos cadastrados e gerencie novas turmas quando necessário.
         }
       </p>
     </div>
@@ -43,9 +43,9 @@
         <h3>Admin - Criar novo grupo</h3>
       </div>
       <div class="form-grid">
-        <input placeholder="Titulo" [(ngModel)]="novoTitulo" />
+        <input placeholder="Título" [(ngModel)]="novoTitulo" />
         <select [(ngModel)]="novaMateria">
-          <option [ngValue]="null">Selecione materia</option>
+          <option [ngValue]="null">Selecione matéria</option>
           <option value="TG">TG</option>
           <option value="PTG">PTG</option>
         </select>
@@ -74,7 +74,7 @@
       <div class="form-grid">
         <input placeholder="Titulo" [(ngModel)]="editarTitulo" />
         <select [(ngModel)]="editarMateria">
-          <option [ngValue]="null">Selecione materia</option>
+          <option [ngValue]="null">Selecione matéria</option>
           <option value="TG">TG</option>
           <option value="PTG">PTG</option>
         </select>
@@ -115,13 +115,13 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Titulo</th>
-                <th>Materia</th>
+                <th>Título</th>
+                <th>Matéria</th>
                 <th>Status</th>
                 <th>Orientador</th>
                 <th>Coorientador</th>
                 <th>Membros</th>
-                @if (isAdmin()) { <th>Acoes</th> }
+                @if (isAdmin()) { <th>Ações</th> }
               </tr>
             </thead>
             <tbody>
@@ -200,8 +200,8 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Titulo</th>
-                <th>Materia</th>
+                <th>Título</th>
+                <th>Matéria</th>
                 <th>Status</th>
                 <th>Nota final</th>
                 <th>Orientador</th>
@@ -248,8 +248,8 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Titulo</th>
-                <th>Materia</th>
+                <th>Título</th>
+                <th>Matéria</th>
                 <th>Status</th>
                 <th>Nota final</th>
                 <th>Orientador</th>

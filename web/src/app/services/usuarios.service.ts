@@ -48,4 +48,14 @@ export class UsuariosService {
   excluirAdmin(id: number) {
     return this.http.delete<void>(`/api/admin/usuarios/${id}`);
   }
+
+  // -------- Recuperacao de senha (publico) --------
+
+  solicitarRecuperacao(email: string) {
+    return this.http.post<void>('/api/auth/forgot-password', { email });
+  }
+
+  redefinirSenha(token: string, novaSenha: string) {
+    return this.http.post<void>('/api/auth/reset-password', { token, novaSenha });
+  }
 }

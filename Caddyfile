@@ -1,0 +1,51 @@
+# =============================================================
+# SGTC - Caddyfile
+#
+# Caddy faz HTTPS automatico via Let's Encrypt para o dominio
+# definido pela env SGTC_DOMAIN (ex: sgtc.fatectatui.edu.br).
+#
+# Em DEV ou se SGTC_DOMAIN nao estiver setado, escuta em :80
+# fazendo proxy reverso sem TLS (use somente em rede interna).
+# =============================================================
+
+{$SGTC_DOMAIN:http://} {
+    encode zstd gzip
+
+    # ----- Cabecalhos de seguranca -----
+    header {
+        # HSTS so faz sentido com HTTPS real; quando SGTC_DOMAIN tem
+        # https, Caddy ja redireciona automaticamente.
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # CSP basica - ajustar se usar fontes / CDNs externos.
+        Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none';"
+        # Remove header informativo do Caddy
+        -Server
+    }
+
+    # ----- API e endpoints publicos -> backend Spring Boot -----
+    @api {
+        path /api/* /public/*
+    }
+    handle @api {
+        reverse_proxy backend:8080 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # ----- Tudo o resto -> frontend Angular (servido por nginx) -----
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    # ----- Logs -----
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}

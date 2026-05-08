@@ -70,6 +70,9 @@ public class Reuniao {
     @Column(name = "token_confirmacao", length = 100)
     private String tokenConfirmacao;
 
+    @Column(name = "token_expira_em")
+    private LocalDateTime tokenExpiraEm;
+
     @Column(name = "respondida_em")
     private LocalDateTime respondidaEm;
 
@@ -112,6 +115,8 @@ public class Reuniao {
     }
     public String getTokenConfirmacao() { return tokenConfirmacao; }
     public void setTokenConfirmacao(String tokenConfirmacao) { this.tokenConfirmacao = tokenConfirmacao; }
+    public LocalDateTime getTokenExpiraEm() { return tokenExpiraEm; }
+    public void setTokenExpiraEm(LocalDateTime tokenExpiraEm) { this.tokenExpiraEm = tokenExpiraEm; }
     public LocalDateTime getRespondidaEm() { return respondidaEm; }
     public void setRespondidaEm(LocalDateTime respondidaEm) { this.respondidaEm = respondidaEm; }
 }
