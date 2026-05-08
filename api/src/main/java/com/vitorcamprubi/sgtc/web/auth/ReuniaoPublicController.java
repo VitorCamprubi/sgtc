@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,11 +34,21 @@ public class ReuniaoPublicController {
 
     @GetMapping(value = "/confirmar", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> confirmar(@RequestParam("token") String token) {
-        return responder(token, true);
+        return ResponseEntity.ok().body(paginaConfirmacao(token, true));
     }
 
     @GetMapping(value = "/recusar", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> recusar(@RequestParam("token") String token) {
+        return ResponseEntity.ok().body(paginaConfirmacao(token, false));
+    }
+
+    @PostMapping(value = "/confirmar", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> confirmarPost(@RequestParam("token") String token) {
+        return responder(token, true);
+    }
+
+    @PostMapping(value = "/recusar", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> recusarPost(@RequestParam("token") String token) {
         return responder(token, false);
     }
 
@@ -89,6 +100,46 @@ public class ReuniaoPublicController {
                         escape(titulo),
                         grupo == null || grupo.isBlank() ? "" : "<p><b>Grupo:</b> " + escape(grupo) + "</p>",
                         escape(mensagem),
+                        webUrl);
+    }
+
+    private String paginaConfirmacao(String token, boolean confirmar) {
+        String acao = confirmar ? "confirmar" : "recusar";
+        String titulo = confirmar ? "Confirmar reuniao" : "Recusar reuniao";
+        String mensagem = confirmar
+                ? "Clique no botao abaixo para confirmar sua participacao nesta reuniao."
+                : "Clique no botao abaixo para recusar esta reuniao. Os alunos serao avisados.";
+        String cor = confirmar ? "#2e7d32" : "#c62828";
+        String textoBotao = confirmar ? "Confirmar reuniao" : "Recusar reuniao";
+        return """
+                <!doctype html>
+                <html lang="pt-BR"><head><meta charset="utf-8"/>
+                  <title>SGTC - %s</title>
+                  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+                </head>
+                <body style="font-family:Arial,sans-serif;background:#f4f6fa;margin:0;padding:0">
+                  <div style="max-width:520px;margin:60px auto;background:#fff;border-radius:8px;
+                       padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.08);text-align:center">
+                    <h1 style="color:%s;margin-top:0">%s</h1>
+                    <p>%s</p>
+                    <form method="post" action="/api/auth/reunioes/%s">
+                      <input type="hidden" name="token" value="%s"/>
+                      <button type="submit" style="background:%s;color:#fff;padding:10px 20px;
+                         border:0;border-radius:6px;font-weight:bold;cursor:pointer">%s</button>
+                    </form>
+                    <p><a href="%s" style="color:#1976d2;text-decoration:none;display:inline-block;margin-top:16px">
+                       Voltar ao SGTC</a></p>
+                  </div>
+                </body></html>
+                """.formatted(
+                        escape(titulo),
+                        cor,
+                        escape(titulo),
+                        escape(mensagem),
+                        acao,
+                        escape(token),
+                        cor,
+                        escape(textoBotao),
                         webUrl);
     }
 
