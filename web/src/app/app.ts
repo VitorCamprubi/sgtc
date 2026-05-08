@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { Usuario, UsuariosService } from './services/usuarios.service';
 
 @Component({
@@ -12,7 +13,9 @@ import { Usuario, UsuariosService } from './services/usuarios.service';
 })
 export class AppComponent implements OnInit {
   private usuariosApi = inject(UsuariosService);
+  private router = inject(Router);
   userRole: Usuario['role'] | null = null;
+  currentUrl = '';
 
   private readonly AUTH_KEY = 'sgtc_auth';
   private readonly USER_KEY = 'sgtc_user';
@@ -38,14 +41,20 @@ export class AppComponent implements OnInit {
   }
 
   get isAdmin(): boolean {
-    return this.userRole === 'ADMIN' || this.storedUser?.role === 'ADMIN';
+    return this.storedUser?.role === 'ADMIN';
   }
 
   get isAdminLinkVisible(): boolean {
     return this.isLoggedIn && this.isAdmin;
   }
 
+  get isAuthRoute(): boolean {
+    const path = this.currentUrl.split('?')[0];
+    return path === '/login' || path === '/esqueci-senha' || path === '/redefinir-senha';
+  }
+
   ngOnInit(): void {
+    this.currentUrl = this.router.url;
     this.userRole = this.storedUser?.role ?? null;
 
     this.usuariosApi.getUsuarioAtual().subscribe((u) => {
@@ -55,6 +64,13 @@ export class AppComponent implements OnInit {
         sessionStorage.setItem(this.USER_KEY, userJson);
         localStorage.setItem(this.USER_KEY, userJson);
       }
+    });
+
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe((event) => {
+      this.currentUrl = event.urlAfterRedirects;
+      this.userRole = this.storedUser?.role ?? null;
     });
   }
 
