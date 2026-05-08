@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -77,10 +78,37 @@ public class AuthController {
 
     /**
      * Endpoint publico chamado pelo link enviado por e-mail.
-     * Redireciona o usuario para a pagina de login do front-end com um
-     * parametro indicando o resultado.
+     * O GET nao confirma a conta diretamente para evitar confirmacao por
+     * scanners de link de clientes de e-mail. A confirmacao real acontece
+     * no POST disparado pelo botao da pagina.
      */
-    @GetMapping("/verify-email")
+    @GetMapping(value = "/verify-email", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> verifyEmailPage(@RequestParam("token") String token) {
+        String corpo = """
+                <!doctype html>
+                <html lang="pt-BR"><head><meta charset="utf-8"/>
+                  <title>SGTC - Confirmar e-mail</title>
+                  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+                </head>
+                <body style="font-family:Arial,sans-serif;background:#f4f6fa;margin:0;padding:0">
+                  <div style="max-width:520px;margin:60px auto;background:#fff;border-radius:8px;
+                       padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.08);text-align:center">
+                    <h1 style="color:#0d47a1;margin-top:0">Confirmar e-mail</h1>
+                    <p>Clique no botao abaixo para ativar sua conta no SGTC.</p>
+                    <form method="post" action="/api/auth/verify-email">
+                      <input type="hidden" name="token" value="%s"/>
+                      <button type="submit" style="background:#1976d2;color:#fff;padding:10px 20px;
+                         border:0;border-radius:6px;font-weight:bold;cursor:pointer">Confirmar e-mail</button>
+                    </form>
+                    <p><a href="%s" style="color:#1976d2;text-decoration:none;display:inline-block;margin-top:16px">
+                       Voltar ao SGTC</a></p>
+                  </div>
+                </body></html>
+                """.formatted(escapeHtml(token), webUrl);
+        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(corpo);
+    }
+
+    @PostMapping("/verify-email")
     public ResponseEntity<Void> verifyEmail(@RequestParam("token") String token) {
         String status;
         try {
@@ -100,6 +128,12 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(destino))
                 .build();
+    }
+
+    private static String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     /**
