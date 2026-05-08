@@ -1,0 +1,20 @@
+# =============================================================
+# SGTC - production override
+#
+# Use junto com docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile https up -d --build
+#
+# Em producao, somente Caddy deve ficar exposto publicamente.
+# MySQL, backend e frontend ficam acessiveis apenas na rede interna
+# do Docker Compose.
+# =============================================================
+
+services:
+  mysql:
+    ports: !reset []
+
+  backend:
+    ports: !reset []
+
+  frontend:
+    ports: !reset []
