@@ -22,7 +22,12 @@ public class AuthService {
             throw new AccessDeniedException("Usuario nao autenticado");
         }
         String email = authentication.getName();
-        return users.findByEmail(email)
+        User user = users.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado: " + email));
+        if (!user.isAtivo()) {
+            // JWT continuou valido depois que o admin desativou a conta.
+            throw new AccessDeniedException("Conta desativada");
+        }
+        return user;
     }
 }

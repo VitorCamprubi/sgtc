@@ -8,7 +8,7 @@
       </p>
       <h2>Usuários</h2>
       <p class="section-subtitle">
-        Cadastre, edite ou remova alunos e professores.
+        Cadastre, edite, desative ou reative alunos e professores.
       </p>
     </div>
     <button class="ghost-button" type="button" (click)="carregarUsuariosAdmin(adminRoleFiltro())">
@@ -35,6 +35,12 @@
             Professores
           </button>
         </div>
+        <label class="toggle-inativos">
+          <input type="checkbox"
+                 [checked]="mostrarInativos()"
+                 (change)="toggleMostrarInativos()" />
+          Mostrar inativos
+        </label>
       </div>
 
       @if (adminError()) {
@@ -56,21 +62,33 @@
                 <th>Email</th>
                 <th>Perfil</th>
                 @if (adminRoleFiltro() === 'ALUNO') { <th>RA</th> }
+                <th>Status</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody>
               @for (u of usuariosAdmin()!; track u.id) {
-                <tr>
+                <tr [class.row-inativo]="u.ativo === false">
                   <td>{{ u.nome }}</td>
                   <td>{{ u.email }}</td>
                   <td>{{ u.role }}</td>
                   @if (adminRoleFiltro() === 'ALUNO') {
                     <td>{{ u.ra || '-' }}</td>
                   }
+                  <td>
+                    @if (u.ativo === false) {
+                      <span class="badge-status inativo">Inativo</span>
+                    } @else {
+                      <span class="badge-status ativo">Ativo</span>
+                    }
+                  </td>
                   <td class="actions">
-                    <button type="button" class="ghost-button" (click)="editarUsuario(u)">Editar</button>
-                    <button type="button" class="ghost-button danger" (click)="excluirUsuario(u)">Excluir</button>
+                    @if (u.ativo === false) {
+                      <button type="button" class="ghost-button" (click)="reativarUsuario(u)">Reativar</button>
+                    } @else {
+                      <button type="button" class="ghost-button" (click)="editarUsuario(u)">Editar</button>
+                      <button type="button" class="ghost-button danger" (click)="excluirUsuario(u)">Desativar</button>
+                    }
                   </td>
                 </tr>
               }

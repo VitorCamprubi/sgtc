@@ -26,6 +26,14 @@ public class User {
     @Column(unique = true)
     private String ra; // opcional (só p/ alunos)
 
+    /**
+     * Flag de soft delete. Quando false, o usuario nao consegue mais logar
+     * (ver SecurityUser.isEnabled) nem aparece nas listagens padrao,
+     * mas seu historico (comentarios, grupos arquivados, etc.) e' preservado.
+     */
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean ativo = true;
+
     // === Verificação de e-mail ===
     @Column(name = "email_confirmado", nullable = false, columnDefinition = "boolean default false")
     private boolean emailConfirmado = false;
@@ -56,6 +64,8 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public String getRa() { return ra; }
     public void setRa(String ra) { this.ra = ra; }
+    public boolean isAtivo() { return ativo; }
+    public void setAtivo(boolean ativo) { this.ativo = ativo; }
     public boolean isEmailConfirmado() { return emailConfirmado; }
     public void setEmailConfirmado(boolean emailConfirmado) { this.emailConfirmado = emailConfirmado; }
     public String getTokenConfirmacao() { return tokenConfirmacao; }

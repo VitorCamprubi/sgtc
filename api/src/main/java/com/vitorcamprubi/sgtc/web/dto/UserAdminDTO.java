@@ -9,6 +9,7 @@ public class UserAdminDTO {
     public String email;
     public Role role;
     public String ra;
+    public boolean ativo;
 
     public static UserAdminDTO of(User u) {
         UserAdminDTO dto = new UserAdminDTO();
@@ -17,6 +18,7 @@ public class UserAdminDTO {
         dto.email = u.getEmail();
         dto.role = u.getRole();
         dto.ra = u.getRa();
+        dto.ativo = u.isAtivo();
         return dto;
     }
 }

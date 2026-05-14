@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -9,6 +9,7 @@ export type Usuario = {
   email: string;
   role: 'ADMIN' | 'PROFESSOR' | 'ALUNO';
   ra?: string | null;
+  ativo?: boolean;
 };
 
 export type UsuarioAdminPayload = {
@@ -32,8 +33,10 @@ export class UsuariosService {
     return this.http.get<Usuario>('/api/auth/me').pipe(catchError(() => of(null)));
   }
 
-  listarAdmin(role?: 'ALUNO' | 'PROFESSOR') {
-    const params = role ? { role } : undefined;
+  listarAdmin(role?: 'ALUNO' | 'PROFESSOR', incluirInativos = false) {
+    let params = new HttpParams();
+    if (role) params = params.set('role', role);
+    if (incluirInativos) params = params.set('incluirInativos', 'true');
     return this.http.get<Usuario[]>('/api/admin/usuarios', { params });
   }
 
@@ -45,8 +48,13 @@ export class UsuariosService {
     return this.http.put<Usuario>(`/api/admin/usuarios/${id}`, payload);
   }
 
+  /** Soft delete: marca o usuário como inativo no servidor. */
   excluirAdmin(id: number) {
     return this.http.delete<void>(`/api/admin/usuarios/${id}`);
+  }
+
+  reativarAdmin(id: number) {
+    return this.http.post<Usuario>(`/api/admin/usuarios/${id}/reativar`, {});
   }
 
   // -------- Recuperacao de senha (publico) --------

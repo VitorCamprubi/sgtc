@@ -47,16 +47,32 @@ public class UserAdminService {
         this.emailService = emailService;
     }
 
-    public List<UserAdminDTO> listar(Role role) {
+    public List<UserAdminDTO> listar(Role role, boolean incluirInativos) {
         List<User> lista = role == null ? users.findAll() : users.findByRole(role);
-        return lista.stream().map(UserAdminDTO::of).toList();
+        return lista.stream()
+                .filter(u -> incluirInativos || u.isAtivo())
+                .map(UserAdminDTO::of)
+                .toList();
     }
 
     @Transactional
     public UserAdminDTO criar(UserAdminRequest req) {
         validarRolePermitida(req.getRole());
-        if (users.findByEmail(req.getEmail()).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail ja cadastrado");
+        var existente = users.findByEmail(req.getEmail()).orElse(null);
+        if (existente != null) {
+            if (existente.isAtivo()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail ja cadastrado");
+            }
+            // E-mail pertencia a um usuario desativado: reativa atualizando os dados.
+            preencher(existente, req, true);
+            existente.setAtivo(true);
+            existente.setEmailConfirmado(false);
+            String token = UUID.randomUUID().toString();
+            existente.setTokenConfirmacao(token);
+            existente.setTokenConfirmacaoExpiraEm(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_TTL_HOURS));
+            User salvo = users.save(existente);
+            emailService.enviarConfirmacaoCadastro(salvo, token);
+            return UserAdminDTO.of(salvo);
         }
 
         User u = new User();
@@ -134,29 +150,49 @@ public class UserAdminService {
         return UserAdminDTO.of(users.save(u));
     }
 
+    /**
+     * Desativa um usuario (soft delete). Preserva todo o historico:
+     * comentarios, documentos, reunioes, vinculo a grupos arquivados etc.
+     * O usuario nao consegue mais logar nem aparece nas listagens padrao,
+     * mas o nome dele continua nas referencias existentes.
+     *
+     * Regras:
+     *  - 404 se o usuario nao existe
+     *  - 400 se o usuario ja esta inativo
+     *  - 400 se o admin tenta desativar a propria conta (anti-tiro-no-pe)
+     */
     @Transactional
-    public void excluir(Long id) {
+    public void excluir(Long id, User atual) {
         User u = users.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado"));
 
-        if (u.getRole() == Role.PROFESSOR) {
-            long qtdGrupos = grupos.countByOrientadorIdOrCoorientadorId(id, id);
-            if (qtdGrupos > 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario esta atribuido como orientador/coorientador em grupos");
-            }
+        if (atual != null && atual.getId() != null && atual.getId().equals(id)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Voce nao pode desativar a propria conta"
+            );
         }
 
-        if (grupoAlunos.countByAlunoId(id) > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario esta vinculado a grupos como aluno");
+        if (!u.isAtivo()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario ja esta desativado");
         }
 
-        if (docs.countByEnviadoPorId(id) > 0 ||
-                comentarios.countByAutorId(id) > 0 ||
-                reunioes.countByCriadoPorId(id) > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario possui registros (documentos/comentarios/reunioes)");
-        }
+        u.setAtivo(false);
+        users.save(u);
+    }
 
-        users.delete(u);
+    /**
+     * Reativa um usuario previamente desativado.
+     */
+    @Transactional
+    public UserAdminDTO reativar(Long id) {
+        User u = users.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado"));
+        if (u.isAtivo()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario ja esta ativo");
+        }
+        u.setAtivo(true);
+        return UserAdminDTO.of(users.save(u));
     }
 
     private void preencher(User u, UserAdminRequest req, boolean isCreate) {

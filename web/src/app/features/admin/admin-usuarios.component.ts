@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Usuario, UsuarioAdminPayload, UsuariosService } from '../../services/usuarios.service';
 
 @Component({
@@ -18,6 +19,7 @@ export class AdminUsuariosComponent implements OnInit {
   adminLoading = signal<boolean>(false);
   adminRoleFiltro = signal<'ALUNO' | 'PROFESSOR'>('ALUNO');
   editandoId = signal<number | null>(null);
+  mostrarInativos = signal<boolean>(false);
 
   formNome = '';
   formEmail = '';
@@ -26,6 +28,18 @@ export class AdminUsuariosComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarUsuariosAdmin(this.adminRoleFiltro());
+  }
+
+  /**
+   * Extrai a mensagem real do ApiError padronizado pelo backend:
+   *   { code, message, status, path, timestamp, fields }
+   * Fallback para statusText quando o backend nao retornou JSON.
+   */
+  private mensagemErro(e: HttpErrorResponse): string {
+    const msg = e?.error?.message;
+    if (typeof msg === 'string' && msg.trim()) return msg;
+    if (e?.statusText) return `${e.status} ${e.statusText}`;
+    return 'Erro desconhecido. Tente novamente.';
   }
 
   carregarUsuariosAdmin(role: 'ALUNO' | 'PROFESSOR' = this.adminRoleFiltro()) {
@@ -37,16 +51,21 @@ export class AdminUsuariosComponent implements OnInit {
     this.adminLoading.set(true);
     this.usuariosAdmin.set(null);
 
-    this.usuariosApi.listarAdmin(role).subscribe({
+    this.usuariosApi.listarAdmin(role, this.mostrarInativos()).subscribe({
       next: (list) => {
         this.usuariosAdmin.set(list);
         this.adminLoading.set(false);
       },
-      error: (e) => {
+      error: (e: HttpErrorResponse) => {
         this.adminLoading.set(false);
-        this.adminError.set(`${e.status} ${e.statusText}`);
+        this.adminError.set(this.mensagemErro(e));
       },
     });
+  }
+
+  toggleMostrarInativos() {
+    this.mostrarInativos.set(!this.mostrarInativos());
+    this.carregarUsuariosAdmin(this.adminRoleFiltro());
   }
 
   private payloadAtual(): UsuarioAdminPayload | null {
@@ -86,7 +105,7 @@ export class AdminUsuariosComponent implements OnInit {
         this.resetFormUsuario();
         this.carregarUsuariosAdmin(this.adminRoleFiltro());
       },
-      error: (e) => this.adminError.set(`${e.status} ${e.statusText}`),
+      error: (e: HttpErrorResponse) => this.adminError.set(this.mensagemErro(e)),
     });
   }
 
@@ -99,7 +118,15 @@ export class AdminUsuariosComponent implements OnInit {
   }
 
   excluirUsuario(u: Usuario) {
-    if (!confirm(`Excluir o usuário "${u.nome}"?`)) return;
+    if (
+      !confirm(
+        `Desativar o usuário "${u.nome}"?\n\n` +
+          'O nome dele continuará aparecendo no histórico ' +
+          '(grupos arquivados, comentários etc.), mas ele não conseguirá mais entrar no sistema.'
+      )
+    ) {
+      return;
+    }
 
     this.adminError.set(null);
     this.usuariosApi.excluirAdmin(u.id).subscribe({
@@ -107,7 +134,16 @@ export class AdminUsuariosComponent implements OnInit {
         if (this.editandoId() === u.id) this.resetFormUsuario();
         this.carregarUsuariosAdmin(this.adminRoleFiltro());
       },
-      error: (e) => this.adminError.set(`${e.status} ${e.statusText}`),
+      error: (e: HttpErrorResponse) => this.adminError.set(this.mensagemErro(e)),
+    });
+  }
+
+  reativarUsuario(u: Usuario) {
+    if (!confirm(`Reativar o usuário "${u.nome}"?`)) return;
+    this.adminError.set(null);
+    this.usuariosApi.reativarAdmin(u.id).subscribe({
+      next: () => this.carregarUsuariosAdmin(this.adminRoleFiltro()),
+      error: (e: HttpErrorResponse) => this.adminError.set(this.mensagemErro(e)),
     });
   }
 

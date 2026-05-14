@@ -51,6 +51,7 @@ public class SecurityUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        // Bloqueia login de usuarios soft-deleted pelo admin.
+        return user.isAtivo();
     }
 }
